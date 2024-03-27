@@ -16,20 +16,20 @@ func post(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	shortUrl := encodeUrl(body)
+	shortURL := encodeURL(body)
 
 	//добавляем в мапку
-	urls[shortUrl] = string(body)
+	urls[shortURL] = string(body)
 	//формирование ответа
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(fmt.Sprintf("%s%s", "http://localhost:8080/", shortUrl)))
+	w.Write([]byte(fmt.Sprintf("%s%s", "http://localhost:8080/", shortURL)))
 }
 
 func get(w http.ResponseWriter, r *http.Request) {
-	shortUrl := r.URL.String()[1:]
+	shortURL := r.URL.String()[1:]
 
-	if value, found := urls[shortUrl]; found {
+	if value, found := urls[shortURL]; found {
 		//формирование ответа
 		w.Header().Set("Location", value)
 		w.WriteHeader(http.StatusTemporaryRedirect)
@@ -62,7 +62,7 @@ func main() {
 	}
 }
 
-func encodeUrl(url []byte) string {
+func encodeURL(url []byte) string {
 	encoded := base64.StdEncoding.EncodeToString(url)
 	// возвращаем 8 символов, отрезаем последние 2 ==
 	return encoded[len(encoded)-10 : len(encoded)-2]
