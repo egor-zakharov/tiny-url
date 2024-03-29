@@ -68,26 +68,3 @@ func Test_get(t *testing.T) {
 		})
 	}
 }
-
-func Test_router(t *testing.T) {
-	tests := []struct {
-		name         string
-		method       string
-		expectedCode int
-	}{
-		{name: "Проверка роута метода GET", method: http.MethodGet, expectedCode: http.StatusBadRequest},
-		{name: "Проверка роута метода POST", method: http.MethodPost, expectedCode: http.StatusBadRequest},
-		{name: "Проверка роута метода PUT", method: http.MethodPut, expectedCode: http.StatusMethodNotAllowed},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := httptest.NewRequest(tt.method, "/", nil)
-			w := httptest.NewRecorder()
-
-			// вызовем хендлер как обычную функцию, без запуска самого сервера
-			router(w, r)
-			// проверка кода ответа
-			assert.Equal(t, tt.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
-		})
-	}
-}

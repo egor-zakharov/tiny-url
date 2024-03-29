@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 var urls = make(map[string]string)
@@ -31,7 +34,7 @@ func get(w http.ResponseWriter, r *http.Request) {
 
 	if value, found := urls[shortURL]; found {
 		//формирование ответа
-		w.Header().Set("Location", value)
+		w.Header().Add("Location", value)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 
 	} else {
@@ -40,23 +43,14 @@ func get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func router(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		post(w, r)
-	case http.MethodGet:
-		get(w, r)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-}
-
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", router)
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 
-	err := http.ListenAndServe(`:8080`, mux)
+	r.Get("/{link}", get)
+	r.Post("/", post)
+
+	err := http.ListenAndServe("localhost:8080", r)
 	if err != nil {
 		panic(err)
 	}
