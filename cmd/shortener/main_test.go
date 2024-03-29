@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,6 +10,36 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string) {
+	req, err := http.NewRequest(method, ts.URL+path, body)
+	if err != nil {
+		t.Fatal(err)
+		return nil, ""
+	}
+
+	// http client that doesn't redirect
+	httpClient := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+		return nil, ""
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+		return nil, ""
+	}
+	defer resp.Body.Close()
+
+	return resp, string(respBody)
+}
 
 func Test_post(t *testing.T) {
 	tests := []struct {
@@ -23,23 +55,23 @@ func Test_post(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stringReader := strings.NewReader(tt.requestBody)
-			r := httptest.NewRequest(tt.method, "/", stringReader)
-			w := httptest.NewRecorder()
+			ts := httptest.NewServer(chiRouter())
+			defer ts.Close()
+			resp, body := testRequestNoRedirect(t, ts, tt.method, "/", stringReader)
 
-			// вызовем хендлер как обычную функцию, без запуска самого сервера
-			post(w, r)
-
-			assert.Equal(t, tt.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
 			// проверим корректность полученного тела ответа, если мы его ожидаем
 			if tt.expectedResponseBody != "" {
 				// проверка тела ответа
-				assert.Equal(t, tt.expectedResponseBody, w.Body.String(), "Тело ответа не совпадает с ожидаемым")
+				assert.Equal(t, tt.expectedResponseBody, body, "Тело ответа не совпадает с ожидаемым")
 			}
 		})
 	}
 }
 
 func Test_get(t *testing.T) {
+	urls["sometest"] = "https://practicum.yandex.ru/"
 	tests := []struct {
 		name             string
 		method           string
@@ -48,22 +80,20 @@ func Test_get(t *testing.T) {
 		expectedLocation string
 	}{
 		{name: "Проверка отсутствующего URL", method: http.MethodGet, path: "/urlNotFound", expectedCode: http.StatusBadRequest, expectedLocation: ""},
-		{name: "Проверка Location", method: http.MethodGet, path: "/someTest", expectedCode: http.StatusTemporaryRedirect, expectedLocation: "https://practicum.yandex.ru/"},
+		{name: "Проверка Location", method: http.MethodGet, path: "/sometest", expectedCode: http.StatusTemporaryRedirect, expectedLocation: "https://practicum.yandex.ru/"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := httptest.NewRequest(tt.method, tt.path, nil)
-			w := httptest.NewRecorder()
-			urls["someTest"] = "https://practicum.yandex.ru/"
+			ts := httptest.NewServer(chiRouter())
+			defer ts.Close()
+			resp, _ := testRequestNoRedirect(t, ts, tt.method, tt.path, nil)
 
-			// вызовем хендлер как обычную функцию, без запуска самого сервера
-			get(w, r)
-
-			assert.Equal(t, tt.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
 			// проверим корректность полученного тела ответа, если мы его ожидаем
 			if tt.expectedLocation != "" {
 				// проверка заголовка ответа
-				assert.Equal(t, tt.expectedLocation, w.Header().Get("Location"), "Заголовок ответа не совпадает с ожидаемым")
+				assert.Equal(t, tt.expectedLocation, resp.Header.Get("Location"), "Заголовок ответа не совпадает с ожидаемым")
 			}
 		})
 	}

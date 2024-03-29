@@ -30,7 +30,7 @@ func post(w http.ResponseWriter, r *http.Request) {
 }
 
 func get(w http.ResponseWriter, r *http.Request) {
-	shortURL := r.URL.String()[1:]
+	shortURL := chi.URLParam(r, "link")
 
 	if value, found := urls[shortURL]; found {
 		//формирование ответа
@@ -43,14 +43,18 @@ func get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func main() {
+func chiRouter() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
 	r.Get("/{link}", get)
 	r.Post("/", post)
 
-	err := http.ListenAndServe("localhost:8080", r)
+	return r
+}
+
+func main() {
+	err := http.ListenAndServe("localhost:8080", chiRouter())
 	if err != nil {
 		panic(err)
 	}
