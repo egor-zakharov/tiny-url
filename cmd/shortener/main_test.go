@@ -57,7 +57,7 @@ func Test_post(t *testing.T) {
 			ts := httptest.NewServer(chiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/", stringReader)
-
+			resp.Body.Close()
 			// проверка статус кода
 			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
 			// проверим корректность полученного тела ответа, если мы его ожидаем
@@ -86,7 +86,7 @@ func Test_get(t *testing.T) {
 			ts := httptest.NewServer(chiRouter())
 			defer ts.Close()
 			resp, _ := testRequestNoRedirect(t, ts, tt.method, tt.path, nil)
-
+			resp.Body.Close()
 			// проверка статус кода
 			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
 			// проверим корректность полученного тела ответа, если мы его ожидаем
