@@ -41,6 +41,7 @@ func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path strin
 }
 
 func Test_post(t *testing.T) {
+	flagShortAddr = "http://localhost:8080"
 	tests := []struct {
 		name                 string
 		method               string
