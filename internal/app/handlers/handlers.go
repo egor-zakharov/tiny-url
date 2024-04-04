@@ -70,11 +70,11 @@ func (h *Handlers) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUrl := h.flagShortAddr
-	newUrl.Path = shortURL
+	newURL := h.flagShortAddr
+	newURL.Path = shortURL
 
 	//формирование ответа
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(newUrl.String()))
+	w.Write([]byte(newURL.String()))
 }
