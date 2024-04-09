@@ -1,14 +1,17 @@
-package main
+package handlers
 
 import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+const baseURL = "http://localhost:8080"
 
 func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, body)
@@ -40,8 +43,8 @@ func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path strin
 	return resp, string(respBody)
 }
 
-func Test_post(t *testing.T) {
-	flagShortAddr = "http://localhost:8080"
+func Test_Post(t *testing.T) {
+
 	tests := []struct {
 		name                 string
 		method               string
@@ -50,12 +53,16 @@ func Test_post(t *testing.T) {
 		expectedResponseBody string
 	}{
 		{name: "Проверка запроса без тела", method: http.MethodPost, requestBody: "", expectedCode: http.StatusBadRequest, expectedResponseBody: ""},
-		{name: "Проверка запроса без тела", method: http.MethodPost, requestBody: "https://practicum.yandex.ru/", expectedCode: http.StatusCreated, expectedResponseBody: "http://localhost:8080/V4LnJ1Lw"},
+		{name: "Проверка запроса с телом", method: http.MethodPost, requestBody: "https://practicum.yandex.ru/", expectedCode: http.StatusCreated, expectedResponseBody: "http://localhost:8080/V4LnJ1Lw"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stringReader := strings.NewReader(tt.requestBody)
-			ts := httptest.NewServer(chiRouter())
+			baseURL, err := url.Parse(baseURL)
+			if err != nil {
+				t.Errorf("Fail to start test - %v", err)
+			}
+			ts := httptest.NewServer(ChiRouter(New(*baseURL)))
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/", stringReader)
 			resp.Body.Close()
@@ -71,7 +78,7 @@ func Test_post(t *testing.T) {
 }
 
 func Test_get(t *testing.T) {
-	urls["sometest"] = "https://practicum.yandex.ru/"
+	//urls["sometest"] = "https://practicum.yandex.ru/"
 	tests := []struct {
 		name             string
 		method           string
@@ -80,11 +87,19 @@ func Test_get(t *testing.T) {
 		expectedLocation string
 	}{
 		{name: "Проверка отсутствующего URL", method: http.MethodGet, path: "/urlNotFound", expectedCode: http.StatusBadRequest, expectedLocation: ""},
-		{name: "Проверка Location", method: http.MethodGet, path: "/sometest", expectedCode: http.StatusTemporaryRedirect, expectedLocation: "https://practicum.yandex.ru/"},
+		{name: "Проверка Location", method: http.MethodGet, path: "/V4LnJ1Lw", expectedCode: http.StatusTemporaryRedirect, expectedLocation: "https://practicum.yandex.ru/"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := httptest.NewServer(chiRouter())
+			baseURL, err := url.Parse(baseURL)
+			if err != nil {
+				t.Errorf("Fail to start test - %v", err)
+			}
+			h := New(*baseURL)
+			if tt.expectedLocation != "" {
+				h.service.Add(tt.expectedLocation)
+			}
+			ts := httptest.NewServer(ChiRouter(h))
 			defer ts.Close()
 			resp, _ := testRequestNoRedirect(t, ts, tt.method, tt.path, nil)
 			resp.Body.Close()
