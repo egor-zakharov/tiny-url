@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/egor-zakharov/tiny-url/internal/app/logger"
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Handlers struct {
@@ -22,10 +22,9 @@ func New(flagShortAddr url.URL) *Handlers {
 
 func ChiRouter(h *Handlers) http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
 
-	r.Get("/{link}", h.Get)
-	r.Post("/", h.Post)
+	r.Get("/{link}", logger.RequestLogger(h.Get))
+	r.Post("/", logger.RequestLogger(h.Post))
 
 	return r
 }

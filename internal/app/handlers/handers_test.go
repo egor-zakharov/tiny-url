@@ -78,7 +78,6 @@ func Test_Post(t *testing.T) {
 }
 
 func Test_get(t *testing.T) {
-	//urls["sometest"] = "https://practicum.yandex.ru/"
 	tests := []struct {
 		name             string
 		method           string
