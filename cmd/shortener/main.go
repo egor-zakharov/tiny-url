@@ -23,6 +23,7 @@ func main() {
 		panic(err)
 	}
 
+	logger.Log.Sugar().Infow("Log level", "level", conf.FlagLogLevel)
 	logger.Log.Sugar().Infow("Running server", "address", conf.FlagRunAddr)
 
 	err = http.ListenAndServe(conf.FlagRunAddr, handlers.ChiRouter(handlers.New(*runURL)))
