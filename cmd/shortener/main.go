@@ -28,7 +28,6 @@ func main() {
 	}
 
 	store := storage.New(conf.FlagStoragePath)
-	defer store.Backup()
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	handls := handlers.NewHandlers(srv, *runURL, log, zip)

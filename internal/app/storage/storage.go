@@ -25,7 +25,7 @@ func New(file string) *Storage {
 	return &store
 }
 
-func (s *Storage) Add(shortURL, url string) error {
+func (s *Storage) Add(shortURL string, url string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	_, ok := s.urls[shortURL]
@@ -33,6 +33,10 @@ func (s *Storage) Add(shortURL, url string) error {
 		return errAlreadyExist
 	}
 	s.urls[shortURL] = url
+	err := s.addToFile(shortURL, url)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -55,24 +59,21 @@ func (s *Storage) Restore(file string) {
 	short := &models.Data{}
 	for {
 		if err := decoder.Decode(&short); err != nil {
-
 			break
 		}
 		s.urls[short.ShortURL] = short.OriginalURL
 	}
 }
 
-func (s *Storage) Backup() error {
+func (s *Storage) addToFile(shortURL string, url string) error {
 	writer := json.NewEncoder(s.file)
-	for k, v := range s.urls {
-		shortenURL := models.Data{
-			ShortURL:    k,
-			OriginalURL: v,
-		}
-		err := writer.Encode(&shortenURL)
-		if err != nil {
-			return err
-		}
+	shortenURL := models.Data{
+		ShortURL:    shortURL,
+		OriginalURL: url,
+	}
+	err := writer.Encode(&shortenURL)
+	if err != nil {
+		return err
 	}
 	return s.file.Close()
 }
