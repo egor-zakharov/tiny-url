@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"os"
 
 	"io"
 	"net/http"
@@ -54,6 +55,7 @@ func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path strin
 func Test_Post(t *testing.T) {
 	log := logger.NewLogger()
 	store := storage.New(file)
+	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	tests := []struct {
@@ -92,6 +94,7 @@ func Test_PostShorten(t *testing.T) {
 	tempModel := models.Response{}
 	log := logger.NewLogger()
 	store := storage.New(file)
+	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	tests := []struct {
@@ -132,6 +135,7 @@ func Test_PostShorten(t *testing.T) {
 func Test_get(t *testing.T) {
 	log := logger.NewLogger()
 	store := storage.New(file)
+	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	tests := []struct {

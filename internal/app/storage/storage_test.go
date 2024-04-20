@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,8 +21,10 @@ func Test_Add(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Storage{
-				urls: tt.urls,
+			s := &Storage{urls: tt.urls}
+			if !tt.wantErr {
+				s = New("test")
+				defer os.Remove("test")
 			}
 			err := s.Add(tt.shortURL, tt.longURL)
 			if (err != nil) != tt.wantErr {
