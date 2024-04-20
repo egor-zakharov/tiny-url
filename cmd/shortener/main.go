@@ -27,12 +27,14 @@ func main() {
 		panic(err)
 	}
 
-	store := storage.New()
+	store := storage.New(conf.FlagStoragePath)
+	defer store.Backup()
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	handls := handlers.NewHandlers(srv, *runURL, log, zip)
 
 	log.GetLog().Sugar().Infow("Log level", "level", conf.FlagLogLevel)
+	log.GetLog().Sugar().Infow("File storage", "file", conf.FlagStoragePath)
 	log.GetLog().Sugar().Infow("Running server", "address", conf.FlagRunAddr)
 
 	err = http.ListenAndServe(conf.FlagRunAddr, handls.ChiRouter())

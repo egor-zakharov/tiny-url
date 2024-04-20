@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"encoding/json"
 	"errors"
+	"github.com/egor-zakharov/tiny-url/internal/app/models"
+	"os"
 	"sync"
 )
 
@@ -13,12 +16,13 @@ var (
 type Storage struct {
 	urls map[string]string
 	mu   sync.RWMutex
+	file *os.File
 }
 
-func New() *Storage {
-	return &Storage{
-		urls: make(map[string]string),
-	}
+func New(file string) *Storage {
+	store := Storage{}
+	store.Restore(file)
+	return &store
 }
 
 func (s *Storage) Add(shortURL, url string) error {
@@ -40,4 +44,35 @@ func (s *Storage) Get(shortURL string) (string, error) {
 		return "", errNotFound
 	}
 	return url, nil
+}
+
+func (s *Storage) Restore(file string) {
+	s.file, _ = os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
+
+	s.urls = map[string]string{}
+
+	decoder := json.NewDecoder(s.file)
+	short := &models.Data{}
+	for {
+		if err := decoder.Decode(&short); err != nil {
+
+			break
+		}
+		s.urls[short.ShortURL] = short.OriginalURL
+	}
+}
+
+func (s *Storage) Backup() error {
+	writer := json.NewEncoder(s.file)
+	for k, v := range s.urls {
+		shortenURL := models.Data{
+			ShortURL:    k,
+			OriginalURL: v,
+		}
+		err := writer.Encode(&shortenURL)
+		if err != nil {
+			return err
+		}
+	}
+	return s.file.Close()
 }

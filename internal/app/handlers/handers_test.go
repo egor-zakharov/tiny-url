@@ -19,6 +19,7 @@ import (
 )
 
 const baseURL = "http://localhost:8080"
+const file = "test.json"
 
 func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, body)
@@ -52,7 +53,7 @@ func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path strin
 
 func Test_Post(t *testing.T) {
 	log := logger.NewLogger()
-	store := storage.New()
+	store := storage.New(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	tests := []struct {
@@ -90,7 +91,7 @@ func Test_Post(t *testing.T) {
 func Test_PostShorten(t *testing.T) {
 	tempModel := models.Response{}
 	log := logger.NewLogger()
-	store := storage.New()
+	store := storage.New(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	tests := []struct {
@@ -130,7 +131,7 @@ func Test_PostShorten(t *testing.T) {
 
 func Test_get(t *testing.T) {
 	log := logger.NewLogger()
-	store := storage.New()
+	store := storage.New(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	tests := []struct {
