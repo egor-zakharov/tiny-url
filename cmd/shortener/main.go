@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/egor-zakharov/tiny-url/internal/app/service"
+	"github.com/egor-zakharov/tiny-url/internal/app/storage"
 	"net/http"
 	"net/url"
 
@@ -12,8 +14,9 @@ import (
 func main() {
 	conf := config.NewConfig()
 	conf.ParseFlag()
+	log := logger.NewLogger()
 
-	err := logger.Initialize(conf.FlagLogLevel)
+	err := log.Initialize(conf.FlagLogLevel)
 	if err != nil {
 		panic(err)
 	}
@@ -23,10 +26,14 @@ func main() {
 		panic(err)
 	}
 
-	logger.Log.Sugar().Infow("Log level", "level", conf.FlagLogLevel)
-	logger.Log.Sugar().Infow("Running server", "address", conf.FlagRunAddr)
+	store := storage.New()
+	srv := service.NewService(store)
+	handls := handlers.NewHandlers(srv, *runURL, log)
 
-	err = http.ListenAndServe(conf.FlagRunAddr, handlers.ChiRouter(handlers.New(*runURL)))
+	log.GetLog().Sugar().Infow("Log level", "level", conf.FlagLogLevel)
+	log.GetLog().Sugar().Infow("Running server", "address", conf.FlagRunAddr)
+
+	err = http.ListenAndServe(conf.FlagRunAddr, handls.ChiRouter())
 	if err != nil {
 		panic(err)
 	}
