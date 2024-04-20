@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/egor-zakharov/tiny-url/internal/app/logger"
-	"github.com/egor-zakharov/tiny-url/internal/app/service"
-	"github.com/egor-zakharov/tiny-url/internal/app/storage"
+
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/egor-zakharov/tiny-url/internal/app/logger"
 	"github.com/egor-zakharov/tiny-url/internal/app/models"
+	"github.com/egor-zakharov/tiny-url/internal/app/service"
+	"github.com/egor-zakharov/tiny-url/internal/app/storage"
+	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,6 +54,7 @@ func Test_Post(t *testing.T) {
 	log := logger.NewLogger()
 	store := storage.New()
 	srv := service.NewService(store)
+	zip := zipper.NewZipper()
 	tests := []struct {
 		name                 string
 		method               string
@@ -69,7 +72,7 @@ func Test_Post(t *testing.T) {
 			if err != nil {
 				t.Errorf("Fail to start test - %v", err)
 			}
-			ts := httptest.NewServer(NewHandlers(srv, *baseURL, log).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, *baseURL, log, zip).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/", stringReader)
 			resp.Body.Close()
@@ -89,6 +92,7 @@ func Test_PostShorten(t *testing.T) {
 	log := logger.NewLogger()
 	store := storage.New()
 	srv := service.NewService(store)
+	zip := zipper.NewZipper()
 	tests := []struct {
 		name                 string
 		method               string
@@ -107,7 +111,7 @@ func Test_PostShorten(t *testing.T) {
 			if err != nil {
 				t.Errorf("Fail to start test - %v", err)
 			}
-			ts := httptest.NewServer(NewHandlers(srv, *baseURL, log).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, *baseURL, log, zip).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/api/shorten", stringReader)
 			resp.Body.Close()
@@ -128,6 +132,7 @@ func Test_get(t *testing.T) {
 	log := logger.NewLogger()
 	store := storage.New()
 	srv := service.NewService(store)
+	zip := zipper.NewZipper()
 	tests := []struct {
 		name             string
 		method           string
@@ -144,7 +149,7 @@ func Test_get(t *testing.T) {
 			if err != nil {
 				t.Errorf("Fail to start test - %v", err)
 			}
-			h := NewHandlers(srv, *baseURL, log)
+			h := NewHandlers(srv, *baseURL, log, zip)
 			if tt.expectedLocation != "" {
 				h.service.Add(tt.expectedLocation)
 			}
