@@ -28,6 +28,7 @@ func (c *Config) ParseFlag() {
 	if envShortAddr := os.Getenv("BASE_URL"); envShortAddr != "" {
 		c.FlagShortAddr = envShortAddr
 	}
+
 	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
 		c.FlagLogLevel = envLogLevel
 	}

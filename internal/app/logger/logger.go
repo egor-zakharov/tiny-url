@@ -7,6 +7,14 @@ import (
 	"go.uber.org/zap"
 )
 
+type Logger struct {
+	log *zap.Logger
+}
+
+func NewLogger() *Logger {
+	return &Logger{log: zap.NewNop()}
+}
+
 type (
 	responseData struct {
 		status int
@@ -19,8 +27,6 @@ type (
 	}
 )
 
-var Log *zap.Logger = zap.NewNop()
-
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	r.responseData.size += size
@@ -32,7 +38,7 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-func Initialize(level string) error {
+func (l *Logger) Initialize(level string) error {
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
 		return err
@@ -43,11 +49,11 @@ func Initialize(level string) error {
 	if err != nil {
 		return err
 	}
-	Log = zl
+	l.log = zl
 	return nil
 }
 
-func RequestLogger(h http.HandlerFunc) http.HandlerFunc {
+func (l *Logger) RequestLogger(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -61,15 +67,19 @@ func RequestLogger(h http.HandlerFunc) http.HandlerFunc {
 		}
 		h(&logRw, r)
 
-		duration := time.Since(start)
+		duration := time.Since(start).Milliseconds()
 
-		Log.Sugar().Infow("got HTTP request",
+		l.log.Sugar().With(
 			"uri", r.RequestURI,
 			"method", r.Method,
 			"status", responseData.status,
 			"duration", duration,
 			"size", responseData.size,
-		)
+		).Info("got HTTP request")
 
 	})
+}
+
+func (l *Logger) GetLog() *zap.Logger {
+	return l.log
 }

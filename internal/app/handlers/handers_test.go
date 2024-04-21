@@ -1,6 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
+	"github.com/egor-zakharov/tiny-url/internal/app/logger"
+	"github.com/egor-zakharov/tiny-url/internal/app/service"
+	"github.com/egor-zakharov/tiny-url/internal/app/storage"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +49,9 @@ func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path strin
 }
 
 func Test_Post(t *testing.T) {
-
+	log := logger.NewLogger()
+	store := storage.New()
+	srv := service.NewService(store)
 	tests := []struct {
 		name                 string
 		method               string
@@ -62,7 +69,7 @@ func Test_Post(t *testing.T) {
 			if err != nil {
 				t.Errorf("Fail to start test - %v", err)
 			}
-			ts := httptest.NewServer(ChiRouter(New(*baseURL)))
+			ts := httptest.NewServer(NewHandlers(srv, *baseURL, log).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/", stringReader)
 			resp.Body.Close()
@@ -77,7 +84,50 @@ func Test_Post(t *testing.T) {
 	}
 }
 
+func Test_PostShorten(t *testing.T) {
+	tempModel := models.Response{}
+	log := logger.NewLogger()
+	store := storage.New()
+	srv := service.NewService(store)
+	tests := []struct {
+		name                 string
+		method               string
+		requestBody          models.Request
+		expectedCode         int
+		expectedResponseBody models.Response
+	}{
+		{name: "Проверка запроса без тела", method: http.MethodPost, requestBody: models.Request{}, expectedCode: http.StatusBadRequest, expectedResponseBody: models.Response{}},
+		{name: "Проверка запроса с телом", method: http.MethodPost, requestBody: models.Request{URL: "https://practicum.yandex.ru/"}, expectedCode: http.StatusCreated, expectedResponseBody: models.Response{Result: "http://localhost:8080/V4LnJ1Lw"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, _ := json.Marshal(tt.requestBody)
+			stringReader := strings.NewReader(string(out))
+			baseURL, err := url.Parse(baseURL)
+			if err != nil {
+				t.Errorf("Fail to start test - %v", err)
+			}
+			ts := httptest.NewServer(NewHandlers(srv, *baseURL, log).ChiRouter())
+			defer ts.Close()
+			resp, body := testRequestNoRedirect(t, ts, tt.method, "/api/shorten", stringReader)
+			resp.Body.Close()
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
+			// проверим корректность полученного тела ответа, если мы его ожидаем
+			if tt.expectedResponseBody.Result != "" {
+
+				json.Unmarshal([]byte(body), &tempModel)
+				// проверка тела ответа
+				assert.Equal(t, tt.expectedResponseBody, tempModel, "Тело ответа не совпадает с ожидаемым")
+			}
+		})
+	}
+}
+
 func Test_get(t *testing.T) {
+	log := logger.NewLogger()
+	store := storage.New()
+	srv := service.NewService(store)
 	tests := []struct {
 		name             string
 		method           string
@@ -94,11 +144,11 @@ func Test_get(t *testing.T) {
 			if err != nil {
 				t.Errorf("Fail to start test - %v", err)
 			}
-			h := New(*baseURL)
+			h := NewHandlers(srv, *baseURL, log)
 			if tt.expectedLocation != "" {
 				h.service.Add(tt.expectedLocation)
 			}
-			ts := httptest.NewServer(ChiRouter(h))
+			ts := httptest.NewServer(h.ChiRouter())
 			defer ts.Close()
 			resp, _ := testRequestNoRedirect(t, ts, tt.method, tt.path, nil)
 			resp.Body.Close()

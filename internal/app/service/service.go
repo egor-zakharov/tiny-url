@@ -14,17 +14,17 @@ var (
 )
 
 type Service struct {
-	store *storage.Storage
+	storage *storage.Storage
 }
 
-func New() *Service {
-	return &Service{storage.New()}
+func NewService(storage *storage.Storage) *Service {
+	return &Service{storage: storage}
 }
 
 // Для тестов нужен mockgen для storage
 func (s *Service) Add(url string) (shortURL string, err error) {
 	shortURL = encodeURL(url)
-	err = s.store.Add(shortURL, url)
+	err = s.storage.Add(shortURL, url)
 	if err != nil {
 		return shortURL, nil
 	}
@@ -33,7 +33,7 @@ func (s *Service) Add(url string) (shortURL string, err error) {
 
 // Для тестов нужен mockgen для storage
 func (s *Service) Get(shortURL string) (string, error) {
-	url, err := s.store.Get(shortURL)
+	url, err := s.storage.Get(shortURL)
 	if err != nil {
 		return url, err
 	}
