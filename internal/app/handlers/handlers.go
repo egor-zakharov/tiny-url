@@ -3,36 +3,38 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-
 	"github.com/egor-zakharov/tiny-url/internal/app/logger"
 	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
+	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
 	"github.com/go-chi/chi/v5"
+	"io"
+	"net/http"
+	"net/url"
 )
 
 type Handlers struct {
 	service       *service.Service
 	log           *logger.Logger
 	flagShortAddr url.URL
+	zip           *zipper.Zipper
 }
 
-func NewHandlers(service *service.Service, flagShortAddr url.URL, log *logger.Logger) *Handlers {
+func NewHandlers(service *service.Service, flagShortAddr url.URL, log *logger.Logger, zipper *zipper.Zipper) *Handlers {
 	return &Handlers{
 		service:       service,
 		flagShortAddr: flagShortAddr,
 		log:           log,
+		zip:           zipper,
 	}
 }
 
 func (h *Handlers) ChiRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/{link}", h.log.RequestLogger(h.get))
-	r.Post("/", h.log.RequestLogger(h.post))
-	r.Post("/api/shorten", h.log.RequestLogger(h.postShorten))
+	r.Get("/{link}", h.log.RequestLogger(h.zip.GzipMiddleware(h.get)))
+	r.Post("/", h.log.RequestLogger(h.zip.GzipMiddleware(h.post)))
+	r.Post("/api/shorten", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShorten)))
 
 	return r
 }
