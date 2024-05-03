@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/egor-zakharov/tiny-url/internal/app/config"
 	"os"
 
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 
@@ -58,6 +58,8 @@ func Test_Post(t *testing.T) {
 	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
 	tests := []struct {
 		name                 string
 		method               string
@@ -71,11 +73,7 @@ func Test_Post(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stringReader := strings.NewReader(tt.requestBody)
-			baseURL, err := url.Parse(baseURL)
-			if err != nil {
-				t.Errorf("Fail to start test - %v", err)
-			}
-			ts := httptest.NewServer(NewHandlers(srv, *baseURL, log, zip).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/", stringReader)
 			resp.Body.Close()
@@ -97,6 +95,8 @@ func Test_PostShorten(t *testing.T) {
 	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
 	tests := []struct {
 		name                 string
 		method               string
@@ -111,11 +111,7 @@ func Test_PostShorten(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, _ := json.Marshal(tt.requestBody)
 			stringReader := strings.NewReader(string(out))
-			baseURL, err := url.Parse(baseURL)
-			if err != nil {
-				t.Errorf("Fail to start test - %v", err)
-			}
-			ts := httptest.NewServer(NewHandlers(srv, *baseURL, log, zip).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/api/shorten", stringReader)
 			resp.Body.Close()
@@ -138,6 +134,8 @@ func Test_get(t *testing.T) {
 	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
 	tests := []struct {
 		name             string
 		method           string
@@ -150,11 +148,7 @@ func Test_get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			baseURL, err := url.Parse(baseURL)
-			if err != nil {
-				t.Errorf("Fail to start test - %v", err)
-			}
-			h := NewHandlers(srv, *baseURL, log, zip)
+			h := NewHandlers(srv, conf, log, zip)
 			if tt.expectedLocation != "" {
 				h.service.Add(tt.expectedLocation)
 			}
