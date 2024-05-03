@@ -26,6 +26,9 @@ func main() {
 
 	var store storage.Storage
 	db, err := sql.Open("pgx", conf.FlagDB)
+	if err != nil {
+		panic(err)
+	}
 	err = db.Ping()
 	if err != nil {
 		log.GetLog().Sugar().Infow("Use Mem Storage", "Can not ping DB", err)
