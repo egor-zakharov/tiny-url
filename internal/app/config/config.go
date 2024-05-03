@@ -21,7 +21,7 @@ func (c *Config) ParseFlag() {
 	flag.StringVar(&c.FlagRunAddr, "a", "localhost:8080", "address and port to run server")
 	flag.StringVar(&c.FlagShortAddr, "b", "http://localhost:8080", "address and port to short url")
 	flag.StringVar(&c.FlagLogLevel, "l", "info", "log level")
-	flag.StringVar(&c.FlagStoragePath, "f", "/tmp/short-url-db.json", "file storage path")
+	flag.StringVar(&c.FlagStoragePath, "f", "C:\\Users\\edzakharov\\Documents\\GoAdv\\tiny-url\\short-url-db.json", "file storage path")
 	flag.StringVar(&c.FlagDB, "d", "postgres://postgres:admin@localhost:5432/urls?sslmode=disable", "database dsn")
 
 	flag.Parse()

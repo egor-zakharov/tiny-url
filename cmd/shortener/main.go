@@ -25,15 +25,13 @@ func main() {
 	}
 
 	var store storage.Storage
-	if conf.FlagDB == "" {
+	db, err := sql.Open("pgx", conf.FlagDB)
+	err = db.Ping()
+	if err != nil {
+		log.GetLog().Sugar().Infow("Use Mem Storage", "Can not ping DB", err)
 		store = storage.NewMemStorage(conf.FlagStoragePath)
 	} else {
-		db, err := sql.Open("pgx", conf.FlagDB)
-
-		if err != nil {
-			log.GetLog().Sugar().With("error", err).Error("can not open DB")
-			panic(err)
-		}
+		log.GetLog().Sugar().Infow("User DB", "dsn", conf.FlagDB)
 		store = storage.NewDBStorage(context.Background(), db)
 		defer db.Close()
 	}
@@ -45,7 +43,6 @@ func main() {
 	log.GetLog().Sugar().Infow("Log level", "level", conf.FlagLogLevel)
 	log.GetLog().Sugar().Infow("File storage", "file", conf.FlagStoragePath)
 	log.GetLog().Sugar().Infow("Running server", "address", conf.FlagRunAddr)
-	log.GetLog().Sugar().Infow("DB", "dsn", conf.FlagDB)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	defer stop()
