@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/egor-zakharov/tiny-url/internal/app/config"
 	"os"
@@ -54,7 +55,7 @@ func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path strin
 
 func Test_Post(t *testing.T) {
 	log := logger.NewLogger()
-	store := storage.New(file)
+	store := storage.NewMemStorage(file)
 	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
@@ -91,7 +92,7 @@ func Test_Post(t *testing.T) {
 func Test_PostShorten(t *testing.T) {
 	tempModel := models.Response{}
 	log := logger.NewLogger()
-	store := storage.New(file)
+	store := storage.NewMemStorage(file)
 	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
@@ -130,7 +131,7 @@ func Test_PostShorten(t *testing.T) {
 
 func Test_get(t *testing.T) {
 	log := logger.NewLogger()
-	store := storage.New(file)
+	store := storage.NewMemStorage(file)
 	defer os.Remove(file)
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
@@ -150,7 +151,7 @@ func Test_get(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := NewHandlers(srv, conf, log, zip)
 			if tt.expectedLocation != "" {
-				h.service.Add(tt.expectedLocation)
+				h.service.Add(context.Background(), tt.expectedLocation)
 			}
 			ts := httptest.NewServer(h.ChiRouter())
 			defer ts.Close()

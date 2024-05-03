@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/egor-zakharov/tiny-url/internal/app/models"
@@ -13,19 +14,19 @@ var (
 	errNotFound     = errors.New("value not found")
 )
 
-type Storage struct {
+type storage struct {
 	urls map[string]string
 	mu   sync.RWMutex
 	file *os.File
 }
 
-func New(file string) *Storage {
-	store := Storage{}
-	store.Restore(file)
+func NewMemStorage(file string) Storage {
+	store := storage{}
+	store.restore(file)
 	return &store
 }
 
-func (s *Storage) Add(shortURL string, url string) error {
+func (s *storage) Add(ctx context.Context, shortURL string, url string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	_, ok := s.urls[shortURL]
@@ -40,7 +41,7 @@ func (s *Storage) Add(shortURL string, url string) error {
 	return nil
 }
 
-func (s *Storage) Get(shortURL string) (string, error) {
+func (s *storage) Get(ctx context.Context, shortURL string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	url, ok := s.urls[shortURL]
@@ -50,7 +51,7 @@ func (s *Storage) Get(shortURL string) (string, error) {
 	return url, nil
 }
 
-func (s *Storage) Restore(file string) {
+func (s *storage) restore(file string) {
 	s.file, _ = os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
 
 	s.urls = map[string]string{}
@@ -65,7 +66,7 @@ func (s *Storage) Restore(file string) {
 	}
 }
 
-func (s *Storage) addToFile(shortURL string, url string) error {
+func (s *storage) addToFile(shortURL string, url string) error {
 	writer := json.NewEncoder(s.file)
 	shortenURL := models.Data{
 		ShortURL:    shortURL,

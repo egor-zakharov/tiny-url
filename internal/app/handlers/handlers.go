@@ -20,13 +20,13 @@ import (
 )
 
 type Handlers struct {
-	service *service.Service
+	service service.Service
 	log     *logger.Logger
 	config  *config.Config
 	zip     *zipper.Zipper
 }
 
-func NewHandlers(service *service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper) *Handlers {
+func NewHandlers(service service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper) *Handlers {
 	return &Handlers{
 		service: service,
 		config:  config,
@@ -50,7 +50,7 @@ func (h *Handlers) get(w http.ResponseWriter, r *http.Request) {
 	//берем параметр урла
 	shortURL := chi.URLParam(r, "link")
 	//идем в app
-	url, err := h.service.Get(shortURL)
+	url, err := h.service.Get(r.Context(), shortURL)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(url))
@@ -79,7 +79,7 @@ func (h *Handlers) post(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Кодируем и добавляем с сторейдж
-	shortURL, err := h.service.Add(stringBody)
+	shortURL, err := h.service.Add(r.Context(), stringBody)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(fmt.Sprint(err)))
@@ -120,7 +120,7 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Кодируем и добавляем с сторейдж
-	shortURL, err := h.service.Add(req.URL)
+	shortURL, err := h.service.Add(r.Context(), req.URL)
 	if err != nil {
 		h.log.GetLog().Sugar().With("error", err).Error("add storage")
 		w.WriteHeader(http.StatusBadRequest)

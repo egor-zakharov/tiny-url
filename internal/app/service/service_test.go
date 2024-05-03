@@ -24,7 +24,7 @@ func Test_EncodeURL(t *testing.T) {
 }
 
 func Test_ValidateURL(t *testing.T) {
-	s := &Service{}
+	s := &service{}
 	tests := []struct {
 		name    string
 		url     string
