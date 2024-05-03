@@ -7,3 +7,13 @@ type Request struct {
 type Response struct {
 	Result string `json:"result"`
 }
+
+type ShortenBatchRequest struct {
+	CorrelationID string `json:"correlation_id"`
+	URL           string `json:"original_url"`
+}
+
+type ShortenBatchResponse struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}

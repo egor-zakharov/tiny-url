@@ -48,6 +48,20 @@ func (mr *MockStorageMockRecorder) Add(ctx, shortURL, url interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStorage)(nil).Add), ctx, shortURL, url)
 }
 
+// AddBatch mocks base method.
+func (m *MockStorage) AddBatch(ctx context.Context, URLs map[string]string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddBatch", ctx, URLs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddBatch indicates an expected call of AddBatch.
+func (mr *MockStorageMockRecorder) AddBatch(ctx, URLs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockStorage)(nil).AddBatch), ctx, URLs)
+}
+
 // Get mocks base method.
 func (m *MockStorage) Get(ctx context.Context, shortURL string) (string, error) {
 	m.ctrl.T.Helper()

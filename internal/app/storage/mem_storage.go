@@ -12,6 +12,7 @@ import (
 var (
 	errAlreadyExist = errors.New("already exists")
 	errNotFound     = errors.New("value not found")
+	errEmptyData    = errors.New("urls not be empty")
 )
 
 type storage struct {
@@ -35,6 +36,35 @@ func (s *storage) Add(ctx context.Context, shortURL string, url string) error {
 	}
 	s.urls[shortURL] = url
 	err := s.addToFile(shortURL, url)
+	if err != nil {
+		return err
+	}
+	err = s.close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *storage) AddBatch(ctx context.Context, URLs map[string]string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if len(URLs) == 0 {
+		return errEmptyData
+	}
+	for shortURL, url := range URLs {
+		_, ok := s.urls[shortURL]
+		if ok {
+			continue
+		}
+		s.urls[shortURL] = url
+		err := s.addToFile(shortURL, url)
+		if err != nil {
+			return err
+		}
+	}
+	err := s.file.Close()
 	if err != nil {
 		return err
 	}
@@ -76,5 +106,9 @@ func (s *storage) addToFile(shortURL string, url string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *storage) close() error {
 	return s.file.Close()
 }
