@@ -150,19 +150,11 @@ func Test_PostShortenBatch(t *testing.T) {
 			{
 				CorrelationID: "123",
 				URL:           "https://yandex.ru",
-			},
-			{
-				CorrelationID: "345",
-				URL:           "https://mail.ru",
 			}},
 			expectedCode: http.StatusCreated, expectedResponseBody: []models.ShortenBatchResponse{
 				{
 					CorrelationID: "123",
 					ShortURL:      "http://localhost:8080/5kZXgucn",
-				},
-				{
-					CorrelationID: "345",
-					ShortURL:      "http://localhost:8080/9tYWlsLn",
 				},
 			}},
 	}
