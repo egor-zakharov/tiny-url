@@ -15,23 +15,6 @@ type dbStorage struct {
 	db *sql.DB
 }
 
-func (db *dbStorage) AddBatch(ctx context.Context, URLs map[string]string) error {
-	// начинаем транзакцию
-	tx, err := db.db.Begin()
-	if err != nil {
-		return err
-	}
-	for k, v := range URLs {
-		_, err := tx.ExecContext(ctx,
-			"INSERT INTO urls (short_url, original_url) VALUES($1, $2) ON CONFLICT DO NOTHING", k, v)
-		if err != nil {
-			_ = tx.Rollback()
-			return err
-		}
-	}
-	return tx.Commit()
-}
-
 func NewDBStorage(ctx context.Context, db *sql.DB) Storage {
 	dbs := &dbStorage{db: db}
 	_ = dbs.init(ctx)
@@ -48,6 +31,22 @@ func (db *dbStorage) Add(ctx context.Context, shortURL string, url string) error
 		err = ErrConflict
 	}
 	return err
+}
+func (db *dbStorage) AddBatch(ctx context.Context, URLs map[string]string) error {
+	// начинаем транзакцию
+	tx, err := db.db.Begin()
+	if err != nil {
+		return err
+	}
+	for k, v := range URLs {
+		_, err := tx.ExecContext(ctx,
+			"INSERT INTO urls (short_url, original_url) VALUES($1, $2) ON CONFLICT DO NOTHING", k, v)
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (db *dbStorage) Get(ctx context.Context, shortURL string) (string, error) {
@@ -71,4 +70,7 @@ func (db *dbStorage) init(ctx context.Context) error {
 		    )
 		`)
 	return err
+}
+
+func (db *dbStorage) Backup() {
 }

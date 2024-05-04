@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/egor-zakharov/tiny-url/internal/app/config"
-	"os"
-
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +19,6 @@ import (
 )
 
 const baseURL = "http://localhost:8080"
-const file = "test.json"
 
 func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, body)
@@ -55,8 +52,7 @@ func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path strin
 
 func Test_Post(t *testing.T) {
 	log := logger.NewLogger()
-	store := storage.NewMemStorage(file)
-	defer os.Remove(file)
+	store := storage.NewMemStorage("")
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	conf := config.NewConfig()
@@ -92,8 +88,7 @@ func Test_Post(t *testing.T) {
 func Test_PostShorten(t *testing.T) {
 	tempModel := models.Response{}
 	log := logger.NewLogger()
-	store := storage.NewMemStorage(file)
-	defer os.Remove(file)
+	store := storage.NewMemStorage("")
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	conf := config.NewConfig()
@@ -132,8 +127,7 @@ func Test_PostShorten(t *testing.T) {
 func Test_PostShortenBatch(t *testing.T) {
 	var tempModel []models.ShortenBatchResponse
 	log := logger.NewLogger()
-	store := storage.NewMemStorage(file)
-	defer os.Remove(file)
+	store := storage.NewMemStorage("")
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	conf := config.NewConfig()
@@ -179,8 +173,7 @@ func Test_PostShortenBatch(t *testing.T) {
 
 func Test_get(t *testing.T) {
 	log := logger.NewLogger()
-	store := storage.NewMemStorage(file)
-	defer os.Remove(file)
+	store := storage.NewMemStorage("")
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	conf := config.NewConfig()

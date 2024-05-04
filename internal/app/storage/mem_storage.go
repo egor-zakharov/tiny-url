@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"os"
 	"sync"
@@ -24,43 +23,25 @@ func NewMemStorage(file string) Storage {
 func (s *storage) Add(_ context.Context, shortURL string, url string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var errs []error
 	_, ok := s.urls[shortURL]
 	if ok {
-		errs = append(errs, ErrConflict)
+		return ErrConflict
 	}
 	s.urls[shortURL] = url
-	err := s.addToFile(shortURL, url)
-	if err != nil {
-		errs = append(errs, err)
-	}
-	err = s.close()
-	if err != nil {
-		errs = append(errs, err)
-	}
-	return errors.Join(errs...)
+	return nil
 }
 
 func (s *storage) AddBatch(_ context.Context, URLs map[string]string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var errs []error
 	for shortURL, url := range URLs {
 		_, ok := s.urls[shortURL]
 		if ok {
-			errs = append(errs, ErrConflict)
+			return ErrConflict
 		}
 		s.urls[shortURL] = url
-		err := s.addToFile(shortURL, url)
-		if err != nil {
-			errs = append(errs, err)
-		}
 	}
-	err := s.file.Close()
-	if err != nil {
-		errs = append(errs, err)
-	}
-	return errors.Join(errs...)
+	return nil
 }
 
 func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
@@ -88,19 +69,14 @@ func (s *storage) restore(file string) {
 	}
 }
 
-func (s *storage) addToFile(shortURL string, url string) error {
+func (s *storage) Backup() {
 	writer := json.NewEncoder(s.file)
-	shortenURL := models.Data{
-		ShortURL:    shortURL,
-		OriginalURL: url,
+	for k, v := range s.urls {
+		shortenURL := models.Data{
+			ShortURL:    k,
+			OriginalURL: v,
+		}
+		_ = writer.Encode(&shortenURL)
+		_ = s.file.Close()
 	}
-	err := writer.Encode(&shortenURL)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storage) close() error {
-	return s.file.Close()
 }

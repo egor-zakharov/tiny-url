@@ -16,4 +16,5 @@ type Storage interface {
 	Get(ctx context.Context, shortURL string) (string, error)
 	Add(ctx context.Context, shortURL string, url string) error
 	AddBatch(ctx context.Context, URLs map[string]string) error
+	Backup()
 }

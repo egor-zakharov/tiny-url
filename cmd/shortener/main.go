@@ -33,6 +33,7 @@ func main() {
 	if err != nil {
 		log.GetLog().Sugar().Infow("Use Mem Storage", "Can not ping DB", err)
 		store = storage.NewMemStorage(conf.FlagStoragePath)
+		defer store.Backup()
 	} else {
 		log.GetLog().Sugar().Infow("Use DB", "dsn", conf.FlagDB)
 		store = storage.NewDBStorage(context.Background(), db)
@@ -47,7 +48,7 @@ func main() {
 	log.GetLog().Sugar().Infow("File storage", "file", conf.FlagStoragePath)
 	log.GetLog().Sugar().Infow("Running server", "address", conf.FlagRunAddr)
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
