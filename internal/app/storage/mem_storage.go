@@ -9,12 +9,6 @@ import (
 	"sync"
 )
 
-var (
-	errAlreadyExist = errors.New("already exists")
-	errNotFound     = errors.New("value not found")
-	errEmptyData    = errors.New("urls not be empty")
-)
-
 type storage struct {
 	urls map[string]string
 	mu   sync.RWMutex
@@ -27,56 +21,54 @@ func NewMemStorage(file string) Storage {
 	return &store
 }
 
-func (s *storage) Add(ctx context.Context, shortURL string, url string) error {
+func (s *storage) Add(_ context.Context, shortURL string, url string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	var errs []error
 	_, ok := s.urls[shortURL]
 	if ok {
-		return errAlreadyExist
+		errs = append(errs, ErrConflict)
 	}
 	s.urls[shortURL] = url
 	err := s.addToFile(shortURL, url)
 	if err != nil {
-		return err
+		errs = append(errs, err)
 	}
 	err = s.close()
 	if err != nil {
-		return err
+		errs = append(errs, err)
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
-func (s *storage) AddBatch(ctx context.Context, URLs map[string]string) error {
+func (s *storage) AddBatch(_ context.Context, URLs map[string]string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	if len(URLs) == 0 {
-		return errEmptyData
-	}
+	var errs []error
 	for shortURL, url := range URLs {
 		_, ok := s.urls[shortURL]
 		if ok {
-			continue
+			errs = append(errs, ErrConflict)
 		}
 		s.urls[shortURL] = url
 		err := s.addToFile(shortURL, url)
 		if err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 	err := s.file.Close()
 	if err != nil {
-		return err
+		errs = append(errs, err)
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
-func (s *storage) Get(ctx context.Context, shortURL string) (string, error) {
+func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	url, ok := s.urls[shortURL]
 	if !ok {
-		return "", errNotFound
+		return "", ErrNotFound
 	}
 	return url, nil
 }

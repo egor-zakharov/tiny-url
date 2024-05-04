@@ -34,7 +34,7 @@ func main() {
 		log.GetLog().Sugar().Infow("Use Mem Storage", "Can not ping DB", err)
 		store = storage.NewMemStorage(conf.FlagStoragePath)
 	} else {
-		log.GetLog().Sugar().Infow("User DB", "dsn", conf.FlagDB)
+		log.GetLog().Sugar().Infow("Use DB", "dsn", conf.FlagDB)
 		store = storage.NewDBStorage(context.Background(), db)
 		defer db.Close()
 	}

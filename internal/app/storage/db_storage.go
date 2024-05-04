@@ -3,6 +3,9 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"time"
 )
 
@@ -39,7 +42,11 @@ func (db *dbStorage) Add(ctx context.Context, shortURL string, url string) error
 	ctx, cancel := context.WithTimeout(ctx, timeOut)
 	defer cancel()
 
-	_, err := db.db.ExecContext(ctx, `INSERT INTO urls(short_url, original_url) VALUES ($1, $2) ON CONFLICT DO NOTHING`, shortURL, url)
+	_, err := db.db.ExecContext(ctx, `INSERT INTO urls(short_url, original_url) VALUES ($1, $2)`, shortURL, url)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		err = ErrConflict
+	}
 	return err
 }
 
