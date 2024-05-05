@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/egor-zakharov/tiny-url/internal/app/config"
 	"github.com/egor-zakharov/tiny-url/internal/app/logger"
 	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
@@ -11,21 +14,24 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type Handlers struct {
-	service       *service.Service
-	log           *logger.Logger
-	flagShortAddr url.URL
-	zip           *zipper.Zipper
+	service *service.Service
+	log     *logger.Logger
+	config  *config.Config
+	zip     *zipper.Zipper
 }
 
-func NewHandlers(service *service.Service, flagShortAddr url.URL, log *logger.Logger, zipper *zipper.Zipper) *Handlers {
+func NewHandlers(service *service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper) *Handlers {
 	return &Handlers{
-		service:       service,
-		flagShortAddr: flagShortAddr,
-		log:           log,
-		zip:           zipper,
+		service: service,
+		config:  config,
+		log:     log,
+		zip:     zipper,
 	}
 }
 
@@ -33,6 +39,7 @@ func (h *Handlers) ChiRouter() http.Handler {
 	r := chi.NewRouter()
 
 	r.Get("/{link}", h.log.RequestLogger(h.zip.GzipMiddleware(h.get)))
+	r.Get("/ping", h.log.RequestLogger(h.zip.GzipMiddleware(h.ping)))
 	r.Post("/", h.log.RequestLogger(h.zip.GzipMiddleware(h.post)))
 	r.Post("/api/shorten", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShorten)))
 
@@ -79,7 +86,12 @@ func (h *Handlers) post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newURL := h.flagShortAddr
+	newURL, err := url.Parse(h.config.FlagShortAddr)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.log.GetLog().Sugar().With("error", err).Error("short addr parse")
+		return
+	}
 	newURL.Path = shortURL
 
 	//формирование ответа
@@ -116,7 +128,12 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newURL := h.flagShortAddr
+	newURL, err := url.Parse(h.config.FlagShortAddr)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.log.GetLog().Sugar().With("error", err).Error("short addr parse")
+		return
+	}
 	newURL.Path = shortURL
 
 	// заполняем модель ответа
@@ -133,6 +150,25 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
+		return
+	}
+}
+
+func (h *Handlers) ping(w http.ResponseWriter, r *http.Request) {
+	db, err := sql.Open("pgx", h.config.FlagDB)
+	if err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("can not open DB")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	if err := db.PingContext(ctx); err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("can not ping DB")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
