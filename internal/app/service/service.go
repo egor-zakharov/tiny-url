@@ -23,13 +23,29 @@ func NewService(storage storage.Storage) Service {
 }
 
 // Для тестов нужен mockgen для storage
-func (s *service) Add(ctx context.Context, url string) (shortURL string, err error) {
-	shortURL = encodeURL(url)
-	err = s.storage.Add(ctx, shortURL, url)
+func (s *service) Add(ctx context.Context, url string) (string, error) {
+	shortURL := encodeURL(url)
+	err := s.storage.Add(ctx, shortURL, url)
 	if err != nil {
 		return shortURL, nil
 	}
 	return shortURL, err
+}
+
+// AddBatch принимает map[correlation_id]original_url - возвращает map[correlation_id]short_url
+func (s *service) AddBatch(ctx context.Context, URLs map[string]string) (map[string]string, error) {
+	inStore := make(map[string]string, len(URLs))
+	res := make(map[string]string, len(URLs))
+	for corID, url := range URLs {
+		shortURL := encodeURL(url)
+		inStore[shortURL] = url
+		res[corID] = shortURL
+	}
+	err := s.storage.AddBatch(ctx, inStore)
+	if err != nil {
+		return nil, err
+	}
+	return res, err
 }
 
 // Для тестов нужен mockgen для storage

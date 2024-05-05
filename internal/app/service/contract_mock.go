@@ -49,6 +49,21 @@ func (mr *MockServiceMockRecorder) Add(ctx, url interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockService)(nil).Add), ctx, url)
 }
 
+// AddBatch mocks base method.
+func (m *MockService) AddBatch(ctx context.Context, URLs map[string]string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddBatch", ctx, URLs)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddBatch indicates an expected call of AddBatch.
+func (mr *MockServiceMockRecorder) AddBatch(ctx, URLs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockService)(nil).AddBatch), ctx, URLs)
+}
+
 // Get mocks base method.
 func (m *MockService) Get(ctx context.Context, shortURL string) (string, error) {
 	m.ctrl.T.Helper()

@@ -42,6 +42,7 @@ func (h *Handlers) ChiRouter() http.Handler {
 	r.Get("/ping", h.log.RequestLogger(h.zip.GzipMiddleware(h.ping)))
 	r.Post("/", h.log.RequestLogger(h.zip.GzipMiddleware(h.post)))
 	r.Post("/api/shorten", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShorten)))
+	r.Post("/api/shorten/batch", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShortenBatch)))
 
 	return r
 }
@@ -148,6 +149,70 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 
 	// сериализуем ответ сервера
 
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(resp); err != nil {
+		return
+	}
+}
+
+// Было бы тоже неплохо замокать ответ сервиса в тесте на успешное получение
+func (h *Handlers) postShortenBatch(w http.ResponseWriter, r *http.Request) {
+	var req []models.ShortenBatchRequest
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("decode request")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for _, v := range req {
+		//валидируем полученное тело`
+		err := h.service.ValidateURL(v.URL)
+		if err != nil {
+			h.log.GetLog().Sugar().With("error", err).Error("validate url")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprint(err)))
+			return
+		}
+	}
+
+	urls := make(map[string]string, len(req))
+
+	for _, v := range req {
+		urls[v.CorrelationID] = v.URL
+	}
+
+	//Кодируем и добавляем с сторейдж
+	shortURLs, err := h.service.AddBatch(r.Context(), urls)
+	if err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("add storage")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+
+	newURL, err := url.Parse(h.config.FlagShortAddr)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.log.GetLog().Sugar().With("error", err).Error("short addr parse")
+		return
+	}
+
+	// заполняем модель ответа
+	var resp []models.ShortenBatchResponse
+
+	for corID, shortURL := range shortURLs {
+		newURL.Path = shortURL
+		resp = append(resp, models.ShortenBatchResponse{
+			CorrelationID: corID,
+			ShortURL:      newURL.String(),
+		})
+	}
+	//формирование ответа
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	// сериализуем ответ сервера
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
 		return

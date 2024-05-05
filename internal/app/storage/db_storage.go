@@ -12,6 +12,23 @@ type dbStorage struct {
 	db *sql.DB
 }
 
+func (db *dbStorage) AddBatch(ctx context.Context, URLs map[string]string) error {
+	// начинаем транзакцию
+	tx, err := db.db.Begin()
+	if err != nil {
+		return err
+	}
+	for k, v := range URLs {
+		_, err := tx.ExecContext(ctx,
+			"INSERT INTO urls (short_url, original_url) VALUES($1, $2) ON CONFLICT DO NOTHING", k, v)
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func NewDBStorage(ctx context.Context, db *sql.DB) Storage {
 	dbs := &dbStorage{db: db}
 	_ = dbs.init(ctx)

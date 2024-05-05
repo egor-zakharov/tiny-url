@@ -129,6 +129,62 @@ func Test_PostShorten(t *testing.T) {
 	}
 }
 
+func Test_PostShortenBatch(t *testing.T) {
+	var tempModel []models.ShortenBatchResponse
+	log := logger.NewLogger()
+	store := storage.NewMemStorage(file)
+	defer os.Remove(file)
+	srv := service.NewService(store)
+	zip := zipper.NewZipper()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
+	tests := []struct {
+		name                 string
+		method               string
+		requestBody          []models.ShortenBatchRequest
+		expectedCode         int
+		expectedResponseBody []models.ShortenBatchResponse
+	}{
+
+		{name: "Проверка запроса с телом", method: http.MethodPost, requestBody: []models.ShortenBatchRequest{
+			{
+				CorrelationID: "123",
+				URL:           "https://yandex.ru",
+			},
+			{
+				CorrelationID: "345",
+				URL:           "https://mail.ru",
+			}},
+			expectedCode: http.StatusCreated, expectedResponseBody: []models.ShortenBatchResponse{
+				{
+					CorrelationID: "123",
+					ShortURL:      "http://localhost:8080/5kZXgucn",
+				},
+				{
+					CorrelationID: "345",
+					ShortURL:      "http://localhost:8080/9tYWlsLn",
+				},
+			}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, _ := json.Marshal(tt.requestBody)
+			stringReader := strings.NewReader(string(out))
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip).ChiRouter())
+			defer ts.Close()
+			resp, body := testRequestNoRedirect(t, ts, tt.method, "/api/shorten/batch", stringReader)
+			resp.Body.Close()
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
+
+			json.Unmarshal([]byte(body), &tempModel)
+			// проверка тела ответа
+			assert.Equal(t, tt.expectedResponseBody, tempModel, "Тело ответа не совпадает с ожидаемым")
+
+		})
+	}
+}
+
 func Test_get(t *testing.T) {
 	log := logger.NewLogger()
 	store := storage.NewMemStorage(file)
