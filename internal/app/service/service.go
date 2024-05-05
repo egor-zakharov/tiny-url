@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"regexp"
@@ -13,18 +14,18 @@ var (
 	errInvalidURL = errors.New("url is invalid")
 )
 
-type Service struct {
-	storage *storage.Storage
+type service struct {
+	storage storage.Storage
 }
 
-func NewService(storage *storage.Storage) *Service {
-	return &Service{storage: storage}
+func NewService(storage storage.Storage) Service {
+	return &service{storage: storage}
 }
 
 // Для тестов нужен mockgen для storage
-func (s *Service) Add(url string) (shortURL string, err error) {
+func (s *service) Add(ctx context.Context, url string) (shortURL string, err error) {
 	shortURL = encodeURL(url)
-	err = s.storage.Add(shortURL, url)
+	err = s.storage.Add(ctx, shortURL, url)
 	if err != nil {
 		return shortURL, nil
 	}
@@ -32,8 +33,8 @@ func (s *Service) Add(url string) (shortURL string, err error) {
 }
 
 // Для тестов нужен mockgen для storage
-func (s *Service) Get(shortURL string) (string, error) {
-	url, err := s.storage.Get(shortURL)
+func (s *service) Get(ctx context.Context, shortURL string) (string, error) {
+	url, err := s.storage.Get(ctx, shortURL)
 	if err != nil {
 		return url, err
 	}
@@ -41,7 +42,7 @@ func (s *Service) Get(shortURL string) (string, error) {
 }
 
 // Будем явно валидировать в хендлере
-func (s *Service) ValidateURL(url string) error {
+func (s *service) ValidateURL(url string) error {
 	if ok := re.MatchString(url); !ok {
 		return errInvalidURL
 	}
