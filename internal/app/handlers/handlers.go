@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/egor-zakharov/tiny-url/internal/app/config"
 	"github.com/egor-zakharov/tiny-url/internal/app/logger"
 	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
+	"github.com/egor-zakharov/tiny-url/internal/app/storage"
 	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
 	"github.com/go-chi/chi/v5"
 	"io"
@@ -79,21 +81,27 @@ func (h *Handlers) post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Кодируем и добавляем с сторейдж
-	shortURL, err := h.service.Add(r.Context(), stringBody)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprint(err)))
-		return
-	}
-
 	newURL, err := url.Parse(h.config.FlagShortAddr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		h.log.GetLog().Sugar().With("error", err).Error("short addr parse")
 		return
 	}
+
+	//Кодируем и добавляем с сторейдж
+	shortURL, err := h.service.Add(r.Context(), stringBody)
 	newURL.Path = shortURL
+	if err != nil {
+		if errors.Is(err, storage.ErrConflict) {
+			w.WriteHeader(http.StatusConflict)
+			w.Write([]byte(fmt.Sprint(newURL)))
+			return
+		}
+		h.log.GetLog().Sugar().With("error", err).Error("add storage")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
 
 	//формирование ответа
 	w.WriteHeader(http.StatusCreated)
@@ -120,35 +128,34 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Кодируем и добавляем с сторейдж
-	shortURL, err := h.service.Add(r.Context(), req.URL)
-	if err != nil {
-		h.log.GetLog().Sugar().With("error", err).Error("add storage")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprint(err)))
-		return
-	}
-
 	newURL, err := url.Parse(h.config.FlagShortAddr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		h.log.GetLog().Sugar().With("error", err).Error("short addr parse")
 		return
 	}
+	//Кодируем и добавляем с сторейдж
+	shortURL, err := h.service.Add(r.Context(), req.URL)
 	newURL.Path = shortURL
-
 	// заполняем модель ответа
 	resp := models.Response{
 		Result: newURL.String(),
 	}
 
-	//формирование ответа
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-
+	if err != nil && !errors.Is(err, storage.ErrConflict) {
+		h.log.GetLog().Sugar().With("error", err).Error("add storage")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+	if errors.Is(err, storage.ErrConflict) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+	}
 	// сериализуем ответ сервера
-
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
 		return

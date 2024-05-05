@@ -3,6 +3,9 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"time"
 )
 
@@ -12,6 +15,23 @@ type dbStorage struct {
 	db *sql.DB
 }
 
+func NewDBStorage(ctx context.Context, db *sql.DB) Storage {
+	dbs := &dbStorage{db: db}
+	_ = dbs.init(ctx)
+	return dbs
+}
+
+func (db *dbStorage) Add(ctx context.Context, shortURL string, url string) error {
+	ctx, cancel := context.WithTimeout(ctx, timeOut)
+	defer cancel()
+
+	_, err := db.db.ExecContext(ctx, `INSERT INTO urls(short_url, original_url) VALUES ($1, $2)`, shortURL, url)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		err = ErrConflict
+	}
+	return err
+}
 func (db *dbStorage) AddBatch(ctx context.Context, URLs map[string]string) error {
 	// начинаем транзакцию
 	tx, err := db.db.Begin()
@@ -27,20 +47,6 @@ func (db *dbStorage) AddBatch(ctx context.Context, URLs map[string]string) error
 		}
 	}
 	return tx.Commit()
-}
-
-func NewDBStorage(ctx context.Context, db *sql.DB) Storage {
-	dbs := &dbStorage{db: db}
-	_ = dbs.init(ctx)
-	return dbs
-}
-
-func (db *dbStorage) Add(ctx context.Context, shortURL string, url string) error {
-	ctx, cancel := context.WithTimeout(ctx, timeOut)
-	defer cancel()
-
-	_, err := db.db.ExecContext(ctx, `INSERT INTO urls(short_url, original_url) VALUES ($1, $2) ON CONFLICT DO NOTHING`, shortURL, url)
-	return err
 }
 
 func (db *dbStorage) Get(ctx context.Context, shortURL string) (string, error) {
@@ -64,4 +70,7 @@ func (db *dbStorage) init(ctx context.Context) error {
 		    )
 		`)
 	return err
+}
+
+func (db *dbStorage) Backup() {
 }

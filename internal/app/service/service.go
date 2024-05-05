@@ -26,9 +26,6 @@ func NewService(storage storage.Storage) Service {
 func (s *service) Add(ctx context.Context, url string) (string, error) {
 	shortURL := encodeURL(url)
 	err := s.storage.Add(ctx, shortURL, url)
-	if err != nil {
-		return shortURL, nil
-	}
 	return shortURL, err
 }
 

@@ -1,10 +1,11 @@
 module github.com/egor-zakharov/tiny-url
 
-go 1.19
+go 1.20
 
 require (
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/golang/mock v1.6.0
+	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0

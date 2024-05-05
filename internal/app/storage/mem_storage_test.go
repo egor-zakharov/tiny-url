@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 )
 
@@ -21,10 +20,8 @@ func Test_Add(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewMemStorage("")
-			if !tt.wantErr {
-				s = NewMemStorage("test")
-				defer os.Remove("test")
+			s := storage{
+				urls: tt.urls,
 			}
 			err := s.Add(context.Background(), tt.shortURL, tt.longURL)
 			if (err != nil) != tt.wantErr {
@@ -44,14 +41,12 @@ func Test_AddBatch(t *testing.T) {
 		wantErr  bool
 	}{
 		{name: "Добавление batch в dbStorage. Успех", prepURLs: map[string]string{}, inURLs: map[string]string{"thisShort": "thisLong", "thisShort2": "thisLong2"}, wantErr: false},
-		{name: "Добавление batch в dbStorage. Ошибка", prepURLs: map[string]string{}, inURLs: map[string]string{}, wantErr: true},
+		{name: "Добавление batch в dbStorage. Ошибка", prepURLs: map[string]string{"want": "err"}, inURLs: map[string]string{"want": "err"}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewMemStorage("")
-			if !tt.wantErr {
-				s = NewMemStorage("test")
-				defer os.Remove("test")
+			s := storage{
+				urls: tt.prepURLs,
 			}
 			err := s.AddBatch(context.Background(), tt.inURLs)
 			if (err != nil) != tt.wantErr {
