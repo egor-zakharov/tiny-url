@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const timeOut = 10 * time.Second
+const timeOut = 500 * time.Millisecond
 
 type dbStorage struct {
 	db *sql.DB
@@ -93,7 +93,7 @@ func (db *dbStorage) init(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS memData (
 		    short_url VARCHAR NOT NULL UNIQUE,
 		    original_url VARCHAR NOT NULL UNIQUE,
-		    user_id VARCHAR NOT NULL 
+		    user_id VARCHAR
 		    )
 		`)
 	return err
