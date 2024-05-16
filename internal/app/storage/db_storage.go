@@ -68,6 +68,10 @@ func (db *dbStorage) GetAll(ctx context.Context, ID string) (map[string]string, 
 	if err != nil {
 		return nil, err
 	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 	for rows.Next() {
 		shortURL := ""
