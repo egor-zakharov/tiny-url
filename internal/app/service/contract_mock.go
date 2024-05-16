@@ -65,18 +65,33 @@ func (mr *MockServiceMockRecorder) AddBatch(ctx, URLs, ID interface{}) *gomock.C
 }
 
 // Get mocks base method.
-func (m *MockService) Get(ctx context.Context, shortURL, ID string) (string, error) {
+func (m *MockService) Get(ctx context.Context, shortURL string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, shortURL, ID)
+	ret := m.ctrl.Call(m, "Get", ctx, shortURL)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockServiceMockRecorder) Get(ctx, shortURL, ID interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) Get(ctx, shortURL interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockService)(nil).Get), ctx, shortURL, ID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockService)(nil).Get), ctx, shortURL)
+}
+
+// GetAll mocks base method.
+func (m *MockService) GetAll(ctx context.Context, ID string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll", ctx, ID)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockServiceMockRecorder) GetAll(ctx, ID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockService)(nil).GetAll), ctx, ID)
 }
 
 // ValidateURL mocks base method.

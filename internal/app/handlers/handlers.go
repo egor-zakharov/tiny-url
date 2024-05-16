@@ -54,20 +54,10 @@ func (h *Handlers) ChiRouter() http.Handler {
 }
 
 func (h *Handlers) get(w http.ResponseWriter, r *http.Request) {
-
-	//получаем ID
-	ID, err := h.auth.GetID(w, r)
-	if err != nil {
-		h.log.GetLog().Sugar().With("error", err).Error("get ID from token")
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(fmt.Sprint(err)))
-		return
-	}
-
 	//берем параметр урла
 	shortURL := chi.URLParam(r, "link")
 	//идем в app
-	url, err := h.service.Get(r.Context(), shortURL, ID)
+	url, err := h.service.Get(r.Context(), shortURL)
 	if err != nil {
 		w.WriteHeader(http.StatusNoContent)
 		w.Write([]byte(url))

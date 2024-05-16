@@ -74,7 +74,7 @@ func Test_Get(t *testing.T) {
 			if !tt.wantErr {
 				_ = s.Add(context.Background(), tt.shortURL, tt.longURL, "")
 			}
-			long, err := s.Get(context.Background(), tt.shortURL, "")
+			long, err := s.Get(context.Background(), tt.shortURL)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AddNew() error = %v, wantErr %v", err, tt.wantErr)
 				return

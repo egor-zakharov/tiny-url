@@ -49,7 +49,7 @@ func (s *storage) AddBatch(_ context.Context, URLs map[string]string, _ string) 
 	return nil
 }
 
-func (s *storage) Get(_ context.Context, shortURL string, _ string) (string, error) {
+func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	url, ok := s.urls[shortURL]

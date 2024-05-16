@@ -54,8 +54,8 @@ func (s *service) AddBatch(ctx context.Context, URLs map[string]string, ID strin
 }
 
 // Для тестов нужен mockgen для storage
-func (s *service) Get(ctx context.Context, shortURL string, ID string) (string, error) {
-	url, err := s.storage.Get(ctx, shortURL, ID)
+func (s *service) Get(ctx context.Context, shortURL string) (string, error) {
+	url, err := s.storage.Get(ctx, shortURL)
 	if err != nil {
 		return url, err
 	}

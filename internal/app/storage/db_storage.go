@@ -49,11 +49,11 @@ func (db *dbStorage) AddBatch(ctx context.Context, URLs map[string]string, ID st
 	return tx.Commit()
 }
 
-func (db *dbStorage) Get(ctx context.Context, shortURL string, ID string) (string, error) {
+func (db *dbStorage) Get(ctx context.Context, shortURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeOut)
 	defer cancel()
 
-	row := db.db.QueryRowContext(ctx, `SELECT original_url FROM urls WHERE short_url=$1 and user_id=$2`, shortURL, ID)
+	row := db.db.QueryRowContext(ctx, `SELECT original_url FROM urls WHERE short_url=$1`, shortURL)
 	url := ""
 	err := row.Scan(&url)
 	return url, err
