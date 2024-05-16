@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/egor-zakharov/tiny-url/internal/app/auth"
 	"github.com/egor-zakharov/tiny-url/internal/app/config"
 	"io"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 )
 
 const baseURL = "http://localhost:8080"
+const ID = "someString"
 
 func testRequestNoRedirect(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, body)
@@ -55,6 +57,7 @@ func Test_Post(t *testing.T) {
 	store := storage.NewMemStorage("")
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
+	newAuth := auth.NewAuth()
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -70,7 +73,7 @@ func Test_Post(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stringReader := strings.NewReader(tt.requestBody)
-			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/", stringReader)
 			resp.Body.Close()
@@ -92,6 +95,7 @@ func Test_PostShorten(t *testing.T) {
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	conf := config.NewConfig()
+	newAuth := auth.NewAuth()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
 		name                 string
@@ -107,7 +111,7 @@ func Test_PostShorten(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, _ := json.Marshal(tt.requestBody)
 			stringReader := strings.NewReader(string(out))
-			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/api/shorten", stringReader)
 			resp.Body.Close()
@@ -130,6 +134,7 @@ func Test_PostShortenBatch(t *testing.T) {
 	store := storage.NewMemStorage("")
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
+	newAuth := auth.NewAuth()
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -156,7 +161,7 @@ func Test_PostShortenBatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, _ := json.Marshal(tt.requestBody)
 			stringReader := strings.NewReader(string(out))
-			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/api/shorten/batch", stringReader)
 			resp.Body.Close()
@@ -176,6 +181,7 @@ func Test_get(t *testing.T) {
 	store := storage.NewMemStorage("")
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
+	newAuth := auth.NewAuth()
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -185,14 +191,14 @@ func Test_get(t *testing.T) {
 		expectedCode     int
 		expectedLocation string
 	}{
-		{name: "Проверка отсутствующего URL", method: http.MethodGet, path: "/urlNotFound", expectedCode: http.StatusBadRequest, expectedLocation: ""},
+		{name: "Проверка отсутствующего URL", method: http.MethodGet, path: "/urlNotFound", expectedCode: http.StatusNoContent, expectedLocation: ""},
 		{name: "Проверка Location", method: http.MethodGet, path: "/V4LnJ1Lw", expectedCode: http.StatusTemporaryRedirect, expectedLocation: "https://practicum.yandex.ru/"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewHandlers(srv, conf, log, zip)
+			h := NewHandlers(srv, conf, log, zip, newAuth)
 			if tt.expectedLocation != "" {
-				h.service.Add(context.Background(), tt.expectedLocation)
+				h.service.Add(context.Background(), tt.expectedLocation, ID)
 			}
 			ts := httptest.NewServer(h.ChiRouter())
 			defer ts.Close()

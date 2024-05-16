@@ -35,48 +35,48 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockService) Add(ctx context.Context, url string) (string, error) {
+func (m *MockService) Add(ctx context.Context, url, ID string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", ctx, url)
+	ret := m.ctrl.Call(m, "Add", ctx, url, ID)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockServiceMockRecorder) Add(ctx, url interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) Add(ctx, url, ID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockService)(nil).Add), ctx, url)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockService)(nil).Add), ctx, url, ID)
 }
 
 // AddBatch mocks base method.
-func (m *MockService) AddBatch(ctx context.Context, URLs map[string]string) (map[string]string, error) {
+func (m *MockService) AddBatch(ctx context.Context, URLs map[string]string, ID string) (map[string]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddBatch", ctx, URLs)
+	ret := m.ctrl.Call(m, "AddBatch", ctx, URLs, ID)
 	ret0, _ := ret[0].(map[string]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddBatch indicates an expected call of AddBatch.
-func (mr *MockServiceMockRecorder) AddBatch(ctx, URLs interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) AddBatch(ctx, URLs, ID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockService)(nil).AddBatch), ctx, URLs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockService)(nil).AddBatch), ctx, URLs, ID)
 }
 
 // Get mocks base method.
-func (m *MockService) Get(ctx context.Context, shortURL string) (string, error) {
+func (m *MockService) Get(ctx context.Context, shortURL, ID string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, shortURL)
+	ret := m.ctrl.Call(m, "Get", ctx, shortURL, ID)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockServiceMockRecorder) Get(ctx, shortURL interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) Get(ctx, shortURL, ID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockService)(nil).Get), ctx, shortURL)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockService)(nil).Get), ctx, shortURL, ID)
 }
 
 // ValidateURL mocks base method.

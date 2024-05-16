@@ -35,44 +35,56 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockStorage) Add(ctx context.Context, shortURL, url string) error {
+func (m *MockStorage) Add(ctx context.Context, shortURL, url, ID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", ctx, shortURL, url)
+	ret := m.ctrl.Call(m, "Add", ctx, shortURL, url, ID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockStorageMockRecorder) Add(ctx, shortURL, url interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) Add(ctx, shortURL, url, ID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStorage)(nil).Add), ctx, shortURL, url)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStorage)(nil).Add), ctx, shortURL, url, ID)
 }
 
 // AddBatch mocks base method.
-func (m *MockStorage) AddBatch(ctx context.Context, URLs map[string]string) error {
+func (m *MockStorage) AddBatch(ctx context.Context, URLs map[string]string, ID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddBatch", ctx, URLs)
+	ret := m.ctrl.Call(m, "AddBatch", ctx, URLs, ID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddBatch indicates an expected call of AddBatch.
-func (mr *MockStorageMockRecorder) AddBatch(ctx, URLs interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) AddBatch(ctx, URLs, ID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockStorage)(nil).AddBatch), ctx, URLs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockStorage)(nil).AddBatch), ctx, URLs, ID)
+}
+
+// Backup mocks base method.
+func (m *MockStorage) Backup() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Backup")
+}
+
+// Backup indicates an expected call of Backup.
+func (mr *MockStorageMockRecorder) Backup() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Backup", reflect.TypeOf((*MockStorage)(nil).Backup))
 }
 
 // Get mocks base method.
-func (m *MockStorage) Get(ctx context.Context, shortURL string) (string, error) {
+func (m *MockStorage) Get(ctx context.Context, shortURL, ID string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, shortURL)
+	ret := m.ctrl.Call(m, "Get", ctx, shortURL, ID)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStorageMockRecorder) Get(ctx, shortURL interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) Get(ctx, shortURL, ID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStorage)(nil).Get), ctx, shortURL)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStorage)(nil).Get), ctx, shortURL, ID)
 }

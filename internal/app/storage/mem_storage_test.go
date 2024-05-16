@@ -23,7 +23,7 @@ func Test_Add(t *testing.T) {
 			s := storage{
 				urls: tt.urls,
 			}
-			err := s.Add(context.Background(), tt.shortURL, tt.longURL)
+			err := s.Add(context.Background(), tt.shortURL, tt.longURL, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AddNew() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -48,7 +48,7 @@ func Test_AddBatch(t *testing.T) {
 			s := storage{
 				urls: tt.prepURLs,
 			}
-			err := s.AddBatch(context.Background(), tt.inURLs)
+			err := s.AddBatch(context.Background(), tt.inURLs, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AddNew() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -72,9 +72,9 @@ func Test_Get(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewMemStorage("")
 			if !tt.wantErr {
-				_ = s.Add(context.Background(), tt.shortURL, tt.longURL)
+				_ = s.Add(context.Background(), tt.shortURL, tt.longURL, "")
 			}
-			long, err := s.Get(context.Background(), tt.shortURL)
+			long, err := s.Get(context.Background(), tt.shortURL, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("AddNew() error = %v, wantErr %v", err, tt.wantErr)
 				return

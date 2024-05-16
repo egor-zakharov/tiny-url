@@ -14,13 +14,18 @@ type storage struct {
 	file *os.File
 }
 
+func (s *storage) GetAll(ctx context.Context, ID string) (map[string]string, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewMemStorage(file string) Storage {
 	store := storage{}
 	store.restore(file)
 	return &store
 }
 
-func (s *storage) Add(_ context.Context, shortURL string, url string) error {
+func (s *storage) Add(_ context.Context, shortURL string, url string, _ string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	_, ok := s.urls[shortURL]
@@ -31,7 +36,7 @@ func (s *storage) Add(_ context.Context, shortURL string, url string) error {
 	return nil
 }
 
-func (s *storage) AddBatch(_ context.Context, URLs map[string]string) error {
+func (s *storage) AddBatch(_ context.Context, URLs map[string]string, _ string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for shortURL, url := range URLs {
@@ -44,7 +49,7 @@ func (s *storage) AddBatch(_ context.Context, URLs map[string]string) error {
 	return nil
 }
 
-func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
+func (s *storage) Get(_ context.Context, shortURL string, _ string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	url, ok := s.urls[shortURL]
