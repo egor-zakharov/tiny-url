@@ -90,7 +90,7 @@ func (db *dbStorage) init(ctx context.Context) error {
 	defer cancel()
 
 	_, err := db.db.ExecContext(ctx, `
-		CREATE TABLE IF NOT EXISTS memData (
+		CREATE TABLE IF NOT EXISTS urls (
 		    short_url VARCHAR NOT NULL UNIQUE,
 		    original_url VARCHAR NOT NULL UNIQUE,
 		    user_id VARCHAR
