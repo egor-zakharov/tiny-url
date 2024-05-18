@@ -14,9 +14,14 @@ type storage struct {
 	file *os.File
 }
 
-func (s *storage) GetAll(ctx context.Context, ID string) (map[string]string, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *storage) GetAll(_ context.Context, ID string) (map[string]string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	v, ok := s.urls[ID]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return v, nil
 }
 
 func NewMemStorage(file string) Storage {

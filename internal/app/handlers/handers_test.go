@@ -214,3 +214,32 @@ func Test_get(t *testing.T) {
 		})
 	}
 }
+
+func Test_getAll(t *testing.T) {
+	log := logger.NewLogger()
+	store := storage.NewMemStorage("")
+	srv := service.NewService(store)
+	zip := zipper.NewZipper()
+	newAuth := auth.NewAuth()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
+	tests := []struct {
+		name         string
+		method       string
+		expectedCode int
+	}{
+		{name: "Проверка запрета авторизации", method: http.MethodGet, expectedCode: http.StatusUnauthorized},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := NewHandlers(srv, conf, log, zip, newAuth)
+			ts := httptest.NewServer(h.ChiRouter())
+			defer ts.Close()
+			resp, _ := testRequestNoRedirect(t, ts, tt.method, "/api/user/urls", nil)
+			resp.Body.Close()
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
+
+		})
+	}
+}
