@@ -96,7 +96,7 @@ func (db *dbStorage) init(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS urls (
 		    short_url VARCHAR NOT NULL UNIQUE,
 		    original_url VARCHAR NOT NULL UNIQUE,
-		    user_id VARCHAR
+		    user_id VARCHAR NOT NULL 
 		    )
 		`)
 	return err

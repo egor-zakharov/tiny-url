@@ -9,7 +9,7 @@ import (
 )
 
 type storage struct {
-	urls map[string]string
+	urls map[string]map[string]string
 	mu   sync.RWMutex
 	file *os.File
 }
@@ -25,26 +25,41 @@ func NewMemStorage(file string) Storage {
 	return &store
 }
 
-func (s *storage) Add(_ context.Context, shortURL string, url string, _ string) error {
+func (s *storage) Add(_ context.Context, shortURL string, url string, ID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	_, ok := s.urls[shortURL]
+	v, ok := s.urls[ID]
+	if !ok {
+		s.urls[ID] = map[string]string{
+			shortURL: url,
+		}
+		return nil
+	}
+
+	_, ok = v[shortURL]
 	if ok {
 		return ErrConflict
 	}
-	s.urls[shortURL] = url
+	v[shortURL] = url
 	return nil
 }
 
-func (s *storage) AddBatch(_ context.Context, URLs map[string]string, _ string) error {
+func (s *storage) AddBatch(_ context.Context, URLs map[string]string, ID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	v, ok := s.urls[ID]
+	if !ok {
+		s.urls[ID] = URLs
+		return nil
+	}
+
 	for shortURL, url := range URLs {
-		_, ok := s.urls[shortURL]
+		_, ok := v[shortURL]
 		if ok {
 			return ErrConflict
 		}
-		s.urls[shortURL] = url
+		v[shortURL] = url
 	}
 	return nil
 }
@@ -52,17 +67,20 @@ func (s *storage) AddBatch(_ context.Context, URLs map[string]string, _ string) 
 func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	url, ok := s.urls[shortURL]
-	if !ok {
-		return "", ErrNotFound
+	for _, v := range s.urls {
+		url, ok := v[shortURL]
+		if !ok {
+			return "", ErrNotFound
+		}
+		return url, nil
 	}
-	return url, nil
+	return "", ErrNotFound
 }
 
 func (s *storage) restore(file string) {
 	s.file, _ = os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
 
-	s.urls = map[string]string{}
+	s.urls = map[string]map[string]string{}
 
 	decoder := json.NewDecoder(s.file)
 	short := &models.Data{}
@@ -70,18 +88,24 @@ func (s *storage) restore(file string) {
 		if err := decoder.Decode(&short); err != nil {
 			break
 		}
-		s.urls[short.ShortURL] = short.OriginalURL
+		temp := make(map[string]string)
+		temp[short.ShortURL] = short.OriginalURL
+		s.urls[short.UserID] = temp
 	}
 }
 
 func (s *storage) Backup() {
 	writer := json.NewEncoder(s.file)
-	for k, v := range s.urls {
-		shortenURL := models.Data{
-			ShortURL:    k,
-			OriginalURL: v,
+	for userID, v := range s.urls {
+		for short, origin := range v {
+			shortenURL := models.Data{
+				ShortURL:    short,
+				OriginalURL: origin,
+				UserID:      userID,
+			}
+			_ = writer.Encode(&shortenURL)
+			_ = s.file.Close()
 		}
-		_ = writer.Encode(&shortenURL)
-		_ = s.file.Close()
+
 	}
 }
