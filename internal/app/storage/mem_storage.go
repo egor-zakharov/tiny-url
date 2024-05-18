@@ -70,7 +70,7 @@ func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
 	for _, v := range s.urls {
 		url, ok := v[shortURL]
 		if !ok {
-			return "", ErrNotFound
+			continue
 		}
 		return url, nil
 	}
