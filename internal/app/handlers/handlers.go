@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/egor-zakharov/tiny-url/internal/app/auth"
 	"github.com/egor-zakharov/tiny-url/internal/app/config"
 	"github.com/egor-zakharov/tiny-url/internal/app/logger"
 	"github.com/egor-zakharov/tiny-url/internal/app/models"
@@ -26,14 +27,16 @@ type Handlers struct {
 	log     *logger.Logger
 	config  *config.Config
 	zip     *zipper.Zipper
+	auth    *auth.Auth
 }
 
-func NewHandlers(service service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper) *Handlers {
+func NewHandlers(service service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper, auth *auth.Auth) *Handlers {
 	return &Handlers{
 		service: service,
 		config:  config,
 		log:     log,
 		zip:     zipper,
+		auth:    auth,
 	}
 }
 
@@ -42,6 +45,7 @@ func (h *Handlers) ChiRouter() http.Handler {
 
 	r.Get("/{link}", h.log.RequestLogger(h.zip.GzipMiddleware(h.get)))
 	r.Get("/ping", h.log.RequestLogger(h.zip.GzipMiddleware(h.ping)))
+	r.Get("/api/user/urls", h.log.RequestLogger(h.zip.GzipMiddleware(h.getAll)))
 	r.Post("/", h.log.RequestLogger(h.zip.GzipMiddleware(h.post)))
 	r.Post("/api/shorten", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShorten)))
 	r.Post("/api/shorten/batch", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShortenBatch)))
@@ -55,7 +59,7 @@ func (h *Handlers) get(w http.ResponseWriter, r *http.Request) {
 	//идем в app
 	url, err := h.service.Get(r.Context(), shortURL)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNoContent)
 		w.Write([]byte(url))
 		return
 	}
@@ -63,8 +67,64 @@ func (h *Handlers) get(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
+func (h *Handlers) getAll(w http.ResponseWriter, r *http.Request) {
+
+	//получаем ID
+	ID, err := h.auth.GetID(w, r)
+	if err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("get ID from token")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+
+	//TODO При отсутствии сокращённых пользователем URL хендлер должен отдавать HTTP-статус 204 No Content
+	//В тесте /fetch_no_urls  expected: 401, точно ли валидный код ответа?
+	urls, err := h.service.GetAll(r.Context(), ID)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		h.log.GetLog().Sugar().With("error", err).Error("service error")
+		return
+	}
+
+	newURL, err := url.Parse(h.config.FlagShortAddr)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.log.GetLog().Sugar().With("error", err).Error("short addr parse")
+		return
+	}
+
+	// заполняем модель ответа
+	var resp []models.UserURLsResponse
+
+	for shortURL, originalURL := range urls {
+		newURL.Path = shortURL
+		resp = append(resp, models.UserURLsResponse{
+			ShortURL:    newURL.String(),
+			OriginalURL: originalURL,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(resp); err != nil {
+		return
+	}
+
+}
+
 // Было бы тоже неплохо замокать ответ сервиса в тесте на успешное получение
 func (h *Handlers) post(w http.ResponseWriter, r *http.Request) {
+
+	//получаем ID
+	ID, err := h.auth.GetID(w, r)
+	if err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("get ID from token")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+
 	//проверка тела запроса
 	body, err := io.ReadAll(r.Body)
 	//проверяем ошибку чтения тела запроса
@@ -89,7 +149,7 @@ func (h *Handlers) post(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Кодируем и добавляем с сторейдж
-	shortURL, err := h.service.Add(r.Context(), stringBody)
+	shortURL, err := h.service.Add(r.Context(), stringBody, ID)
 	newURL.Path = shortURL
 	if err != nil {
 		if errors.Is(err, storage.ErrConflict) {
@@ -111,6 +171,15 @@ func (h *Handlers) post(w http.ResponseWriter, r *http.Request) {
 
 // Было бы тоже неплохо замокать ответ сервиса в тесте на успешное получение
 func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
+	//получаем ID
+	ID, err := h.auth.GetID(w, r)
+	if err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("get ID from token")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+
 	var req models.Request
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&req); err != nil {
@@ -120,7 +189,7 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//валидируем полученное тело
-	err := h.service.ValidateURL(req.URL)
+	err = h.service.ValidateURL(req.URL)
 	if err != nil {
 		h.log.GetLog().Sugar().With("error", err).Error("validate url")
 		w.WriteHeader(http.StatusBadRequest)
@@ -135,7 +204,7 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Кодируем и добавляем с сторейдж
-	shortURL, err := h.service.Add(r.Context(), req.URL)
+	shortURL, err := h.service.Add(r.Context(), req.URL, ID)
 	newURL.Path = shortURL
 	// заполняем модель ответа
 	resp := models.Response{
@@ -164,6 +233,15 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 
 // Было бы тоже неплохо замокать ответ сервиса в тесте на успешное получение
 func (h *Handlers) postShortenBatch(w http.ResponseWriter, r *http.Request) {
+	//получаем ID
+	ID, err := h.auth.GetID(w, r)
+	if err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("get ID from token")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+
 	var req []models.ShortenBatchRequest
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&req); err != nil {
@@ -190,7 +268,7 @@ func (h *Handlers) postShortenBatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Кодируем и добавляем с сторейдж
-	shortURLs, err := h.service.AddBatch(r.Context(), urls)
+	shortURLs, err := h.service.AddBatch(r.Context(), urls, ID)
 	if err != nil {
 		h.log.GetLog().Sugar().With("error", err).Error("add storage")
 		w.WriteHeader(http.StatusBadRequest)
