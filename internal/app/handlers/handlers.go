@@ -78,11 +78,12 @@ func (h *Handlers) getAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//идем в app
+	//TODO При отсутствии сокращённых пользователем URL хендлер должен отдавать HTTP-статус 204 No Content
+	//В тесте /fetch_no_urls  expected: 401, точно ли валидный код ответа?
 	urls, err := h.service.GetAll(r.Context(), ID)
-	if err != nil || len(urls) == 0 {
-		w.WriteHeader(http.StatusNoContent)
-		h.log.GetLog().Sugar().With("error", err).Error("get ID from token")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		h.log.GetLog().Sugar().With("error", err).Error("service error")
 		return
 	}
 

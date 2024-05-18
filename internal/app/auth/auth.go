@@ -3,8 +3,8 @@ package auth
 import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -54,13 +54,13 @@ func (a *Auth) GetID(w http.ResponseWriter, r *http.Request) (string, error) {
 
 	// проверяем на валидность
 	if !token.Valid {
-		return "", fmt.Errorf("invalid token in cookie: %s", tokenCookie)
+		return "", fmt.Errorf("token is not valid: %s", tokenCookie)
 
 	}
 
 	//проверяем на наличие идентификатора
 	if claims.ID == "" {
-		return "", fmt.Errorf("token not found in cookie: %s", tokenCookie)
+		return "", fmt.Errorf("id not found in cookie: %s", tokenCookie)
 	}
 
 	return claims.ID, nil
@@ -72,7 +72,7 @@ func buildCookie() (*http.Cookie, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		},
-		ID: strconv.FormatInt(time.Now().Unix(), 10),
+		ID: uuid.New().String(),
 	})
 
 	signedString, err := token.SignedString([]byte(SecretKey))

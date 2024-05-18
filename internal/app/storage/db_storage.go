@@ -82,6 +82,9 @@ func (db *dbStorage) GetAll(ctx context.Context, ID string) (map[string]string, 
 		}
 		urls[shortURL] = originalURL
 	}
+	if len(urls) == 0 {
+		return nil, ErrNotFound
+	}
 	return urls, err
 }
 
