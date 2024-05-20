@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"github.com/egor-zakharov/tiny-url/internal/app/auth"
 	"github.com/egor-zakharov/tiny-url/internal/app/config"
 	"github.com/egor-zakharov/tiny-url/internal/app/handlers"
 	"github.com/egor-zakharov/tiny-url/internal/app/logger"
@@ -42,7 +43,8 @@ func main() {
 
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
-	handls := handlers.NewHandlers(srv, conf, log, zip)
+	authz := auth.NewAuth()
+	handls := handlers.NewHandlers(srv, conf, log, zip, authz)
 
 	log.GetLog().Sugar().Infow("Log level", "level", conf.FlagLogLevel)
 	log.GetLog().Sugar().Infow("File storage", "file", conf.FlagStoragePath)
