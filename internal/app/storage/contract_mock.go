@@ -74,6 +74,20 @@ func (mr *MockStorageMockRecorder) Backup() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Backup", reflect.TypeOf((*MockStorage)(nil).Backup))
 }
 
+// Delete mocks base method.
+func (m *MockStorage) Delete(shortURLs, ID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", shortURLs, ID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockStorageMockRecorder) Delete(shortURLs, ID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStorage)(nil).Delete), shortURLs, ID)
+}
+
 // Get mocks base method.
 func (m *MockStorage) Get(ctx context.Context, shortURL string) (string, error) {
 	m.ctrl.T.Helper()

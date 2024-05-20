@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"regexp"
-
 	"github.com/egor-zakharov/tiny-url/internal/app/storage"
+	"regexp"
 )
 
 var (
@@ -16,6 +15,14 @@ var (
 
 type service struct {
 	storage storage.Storage
+}
+
+func (s *service) Delete(shortURLs string, ID string) error {
+	err := s.storage.Delete(shortURLs, ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *service) GetAll(ctx context.Context, ID string) (map[string]string, error) {

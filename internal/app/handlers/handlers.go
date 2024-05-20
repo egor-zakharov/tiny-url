@@ -49,6 +49,7 @@ func (h *Handlers) ChiRouter() http.Handler {
 	r.Post("/", h.log.RequestLogger(h.zip.GzipMiddleware(h.post)))
 	r.Post("/api/shorten", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShorten)))
 	r.Post("/api/shorten/batch", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShortenBatch)))
+	r.Delete("/api/user/urls", h.log.RequestLogger(h.zip.GzipMiddleware(h.deleteBatch)))
 
 	return r
 }
@@ -58,7 +59,13 @@ func (h *Handlers) get(w http.ResponseWriter, r *http.Request) {
 	shortURL := chi.URLParam(r, "link")
 	//идем в app
 	url, err := h.service.Get(r.Context(), shortURL)
+
 	if err != nil {
+		if errors.Is(err, storage.ErrDeletedURL) {
+			w.WriteHeader(http.StatusGone)
+			w.Write([]byte(url))
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 		w.Write([]byte(url))
 		return
@@ -304,6 +311,32 @@ func (h *Handlers) postShortenBatch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handlers) deleteBatch(w http.ResponseWriter, r *http.Request) {
+	ID, err := h.auth.GetID(w, r)
+	if err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("get ID from token")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(fmt.Sprint(err)))
+		return
+	}
+
+	var req models.DeleteBatchRequest
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		h.log.GetLog().Sugar().With("error", err).Error("decode request")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	ch := h.generator(req)
+	_ = h.deleteURL(ch, ID)
+
+	//формирование ответа
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+
+}
+
 func (h *Handlers) ping(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("pgx", h.config.FlagDB)
 	if err != nil {
@@ -321,4 +354,27 @@ func (h *Handlers) ping(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *Handlers) generator(input []string) chan string {
+	ch := make(chan string)
+	go func() {
+		defer close(ch)
+		for _, v := range input {
+			ch <- v
+		}
+	}()
+
+	return ch
+}
+
+func (h *Handlers) deleteURL(ch <-chan string, ID string) error {
+	var errs error
+	for URL := range ch {
+		err := h.service.Delete(URL, ID)
+		if err != nil {
+			errs = err
+		}
+	}
+	return errs
 }

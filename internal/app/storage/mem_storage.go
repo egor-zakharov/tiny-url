@@ -14,6 +14,10 @@ type storage struct {
 	file *os.File
 }
 
+func (s *storage) Delete(shortURLs string, ID string) error {
+	return ErrNotFound
+}
+
 func (s *storage) GetAll(_ context.Context, ID string) (map[string]string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
