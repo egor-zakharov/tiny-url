@@ -11,4 +11,5 @@ type Service interface {
 	Get(ctx context.Context, shortURL string) (string, error)
 	GetAll(ctx context.Context, ID string) (map[string]string, error)
 	ValidateURL(url string) error
+	Delete(shortURLs string, ID string) error
 }

@@ -15,6 +15,11 @@ type dbStorage struct {
 	db *sql.DB
 }
 
+func (db *dbStorage) Delete(shortURLs string, ID string) error {
+	_, err := db.db.Exec(`UPDATE urls set is_deleted=true WHERE short_url=$1 and user_id=$2`, shortURLs, ID)
+	return err
+}
+
 func NewDBStorage(ctx context.Context, db *sql.DB) Storage {
 	dbs := &dbStorage{db: db}
 	_ = dbs.init(ctx)
@@ -53,9 +58,13 @@ func (db *dbStorage) Get(ctx context.Context, shortURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeOut)
 	defer cancel()
 
-	row := db.db.QueryRowContext(ctx, `SELECT original_url FROM urls WHERE short_url=$1`, shortURL)
+	row := db.db.QueryRowContext(ctx, `SELECT original_url, is_deleted FROM urls WHERE short_url=$1`, shortURL)
 	url := ""
-	err := row.Scan(&url)
+	isDeleted := false
+	err := row.Scan(&url, &isDeleted)
+	if isDeleted {
+		return "", ErrDeletedURL
+	}
 	return url, err
 }
 
@@ -96,7 +105,8 @@ func (db *dbStorage) init(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS urls (
 		    short_url VARCHAR NOT NULL UNIQUE,
 		    original_url VARCHAR NOT NULL UNIQUE,
-		    user_id VARCHAR NOT NULL 
+		    user_id VARCHAR NOT NULL,
+		    is_deleted bool NOT NULL default false
 		    )
 		`)
 	return err

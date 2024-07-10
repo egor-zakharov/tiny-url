@@ -8,8 +8,9 @@ import (
 //go:generate mockgen -source=contract.go -destination=contract_mock.go -package=storage
 
 var (
-	ErrNotFound = errors.New("value not found")
-	ErrConflict = errors.New("data conflict")
+	ErrNotFound   = errors.New("value not found")
+	ErrConflict   = errors.New("data conflict")
+	ErrDeletedURL = errors.New("urls is deleted")
 )
 
 type Storage interface {
@@ -18,4 +19,5 @@ type Storage interface {
 	Add(ctx context.Context, shortURL string, url string, ID string) error
 	AddBatch(ctx context.Context, URLs map[string]string, ID string) error
 	Backup()
+	Delete(shortURLs string, ID string) error
 }

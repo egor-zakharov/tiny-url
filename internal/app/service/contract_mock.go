@@ -64,6 +64,20 @@ func (mr *MockServiceMockRecorder) AddBatch(ctx, URLs, ID interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockService)(nil).AddBatch), ctx, URLs, ID)
 }
 
+// Delete mocks base method.
+func (m *MockService) Delete(shortURLs, ID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", shortURLs, ID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockServiceMockRecorder) Delete(shortURLs, ID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockService)(nil).Delete), shortURLs, ID)
+}
+
 // Get mocks base method.
 func (m *MockService) Get(ctx context.Context, shortURL string) (string, error) {
 	m.ctrl.T.Helper()

@@ -9,19 +9,42 @@ import (
 )
 
 type storage struct {
-	urls map[string]map[string]string
+	urls models.MemData
 	mu   sync.RWMutex
 	file *os.File
+}
+
+func (s *storage) Delete(shortURLs string, ID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	shorts, ok := s.urls.UserID[ID]
+	if !ok {
+		return nil
+	}
+	for k, v := range shorts.ShortURL {
+		if k == shortURLs {
+			shorts.ShortURL[k] = models.URL{
+				OriginalURL: v.OriginalURL,
+				IsDeleted:   "true",
+			}
+		}
+	}
+	return nil
 }
 
 func (s *storage) GetAll(_ context.Context, ID string) (map[string]string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	v, ok := s.urls[ID]
+	v, ok := s.urls.UserID[ID]
 	if !ok {
 		return nil, ErrNotFound
 	}
-	return v, nil
+	res := make(map[string]string)
+	for short, url := range v.ShortURL {
+		res[short] = url.OriginalURL
+	}
+	return res, nil
+
 }
 
 func NewMemStorage(file string) Storage {
@@ -33,51 +56,57 @@ func NewMemStorage(file string) Storage {
 func (s *storage) Add(_ context.Context, shortURL string, url string, ID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	v, ok := s.urls[ID]
+	modURL := models.URL{
+		OriginalURL: url,
+		IsDeleted:   "false",
+	}
+	shorts, ok := s.urls.UserID[ID]
 	if !ok {
-		s.urls[ID] = map[string]string{
-			shortURL: url,
-		}
+		short := models.ShortURL{ShortURL: make(map[string]models.URL)}
+		short.ShortURL[shortURL] = modURL
+		s.urls.UserID[ID] = short
 		return nil
 	}
 
-	_, ok = v[shortURL]
+	_, ok = shorts.ShortURL[shortURL]
 	if ok {
 		return ErrConflict
 	}
-	v[shortURL] = url
+
+	shorts.ShortURL[shortURL] = modURL
+	s.urls.UserID[ID] = shorts
 	return nil
 }
 
 func (s *storage) AddBatch(_ context.Context, URLs map[string]string, ID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	v, ok := s.urls[ID]
-	if !ok {
-		s.urls[ID] = URLs
-		return nil
-	}
-
+	short := models.ShortURL{ShortURL: make(map[string]models.URL)}
 	for shortURL, url := range URLs {
-		_, ok := v[shortURL]
+		modURL := models.URL{
+			OriginalURL: url,
+			IsDeleted:   "false",
+		}
+		_, ok := short.ShortURL[shortURL]
 		if ok {
 			return ErrConflict
 		}
-		v[shortURL] = url
+		short.ShortURL[shortURL] = modURL
 	}
+
+	s.urls.UserID[ID] = short
 	return nil
 }
 
 func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	for _, v := range s.urls {
-		url, ok := v[shortURL]
+	for _, v := range s.urls.UserID {
+		url, ok := v.ShortURL[shortURL]
 		if !ok {
 			continue
 		}
-		return url, nil
+		return url.OriginalURL, nil
 	}
 	return "", ErrNotFound
 }
@@ -85,32 +114,36 @@ func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
 func (s *storage) restore(file string) {
 	s.file, _ = os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
 
-	s.urls = map[string]map[string]string{}
+	s.urls = models.MemData{UserID: make(map[string]models.ShortURL)}
 
 	decoder := json.NewDecoder(s.file)
-	short := &models.Data{}
+	rest := &models.Data{}
 	for {
-		if err := decoder.Decode(&short); err != nil {
+		if err := decoder.Decode(&rest); err != nil {
 			break
 		}
-		temp := make(map[string]string)
-		temp[short.ShortURL] = short.OriginalURL
-		s.urls[short.UserID] = temp
+		url := models.URL{
+			OriginalURL: rest.OriginalURL,
+			IsDeleted:   rest.IsDeleted,
+		}
+		short := models.ShortURL{ShortURL: make(map[string]models.URL)}
+		short.ShortURL[rest.ShortURL] = url
+		s.urls.UserID[rest.UserID] = short
 	}
 }
 
 func (s *storage) Backup() {
 	writer := json.NewEncoder(s.file)
-	for userID, v := range s.urls {
-		for short, origin := range v {
+	for userID, shortURLs := range s.urls.UserID {
+		for k, v := range shortURLs.ShortURL {
 			shortenURL := models.Data{
-				ShortURL:    short,
-				OriginalURL: origin,
+				ShortURL:    k,
+				OriginalURL: v.OriginalURL,
 				UserID:      userID,
+				IsDeleted:   v.IsDeleted,
 			}
 			_ = writer.Encode(&shortenURL)
-			_ = s.file.Close()
 		}
-
 	}
+	_ = s.file.Close()
 }
