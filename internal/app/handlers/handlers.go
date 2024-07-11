@@ -22,6 +22,7 @@ import (
 	"time"
 )
 
+// Handlers - handlers struct
 type Handlers struct {
 	service service.Service
 	log     *logger.Logger
@@ -30,7 +31,7 @@ type Handlers struct {
 	auth    *auth.Auth
 }
 
-// NewHandlers - create Handlers
+// NewHandlers - constructor Handlers
 func NewHandlers(service service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper, auth *auth.Auth) *Handlers {
 	return &Handlers{
 		service: service,
@@ -41,6 +42,7 @@ func NewHandlers(service service.Service, config *config.Config, log *logger.Log
 	}
 }
 
+// ChiRouter - router with paths
 func (h *Handlers) ChiRouter() http.Handler {
 	r := chi.NewRouter()
 

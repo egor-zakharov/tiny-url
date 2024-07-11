@@ -1,5 +1,6 @@
 package models
 
+// Data - struct for restore/backup mem_storage
 type Data struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
@@ -7,15 +8,18 @@ type Data struct {
 	IsDeleted   string `json:"is_deleted"`
 }
 
+// URL - struct original_url and deleted flag
 type URL struct {
 	OriginalURL string `json:"original_url"`
 	IsDeleted   string `json:"is_deleted"`
 }
 
+// ShortURL - struct
 type ShortURL struct {
 	ShortURL map[string]URL `json:"short_url"`
 }
 
+// MemData - struct for mem_storage
 type MemData struct {
 	UserID map[string]ShortURL `json:"user_id"`
 }

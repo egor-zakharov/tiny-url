@@ -14,6 +14,14 @@ type storage struct {
 	file *os.File
 }
 
+// NewMemStorage - constructor mem storage
+func NewMemStorage(file string) Storage {
+	store := storage{}
+	store.restore(file)
+	return &store
+}
+
+// Delete - delete url
 func (s *storage) Delete(shortURLs string, ID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -32,6 +40,7 @@ func (s *storage) Delete(shortURLs string, ID string) error {
 	return nil
 }
 
+// GetAll - get urls
 func (s *storage) GetAll(_ context.Context, ID string) (map[string]string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -47,12 +56,7 @@ func (s *storage) GetAll(_ context.Context, ID string) (map[string]string, error
 
 }
 
-func NewMemStorage(file string) Storage {
-	store := storage{}
-	store.restore(file)
-	return &store
-}
-
+// Add - add url
 func (s *storage) Add(_ context.Context, shortURL string, url string, ID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -78,6 +82,7 @@ func (s *storage) Add(_ context.Context, shortURL string, url string, ID string)
 	return nil
 }
 
+// AddBatch - add urls
 func (s *storage) AddBatch(_ context.Context, URLs map[string]string, ID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -98,6 +103,7 @@ func (s *storage) AddBatch(_ context.Context, URLs map[string]string, ID string)
 	return nil
 }
 
+// Get - get url
 func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -132,6 +138,7 @@ func (s *storage) restore(file string) {
 	}
 }
 
+// Backup - restore from file
 func (s *storage) Backup() {
 	writer := json.NewEncoder(s.file)
 	for userID, shortURLs := range s.urls.UserID {

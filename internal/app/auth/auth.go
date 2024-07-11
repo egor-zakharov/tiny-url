@@ -8,12 +8,17 @@ import (
 	"time"
 )
 
+// SecretKey - secret key
 const SecretKey = "secret"
+
+// CookieTokenName - cookie name
 const CookieTokenName = "session_token"
 
+// Auth - empty struct for auth
 type Auth struct {
 }
 
+// NewAuth - constructor
 func NewAuth() *Auth {
 	return &Auth{}
 }
@@ -23,6 +28,7 @@ type claims struct {
 	ID string
 }
 
+// GetID - get userID from cookie
 func (a *Auth) GetID(w http.ResponseWriter, r *http.Request) (string, error) {
 	var tokenCookie *http.Cookie
 	var err error
