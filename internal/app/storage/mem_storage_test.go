@@ -21,7 +21,7 @@ func Test_Add(t *testing.T) {
 	}{
 		{name: "Добавление в dbStorage. Успех", urls: models.MemData{UserID: make(map[string]models.ShortURL)}, shortURL: "thisShort", longURL: "thisLong", userID: userID, wantErr: false},
 		{name: "Добавление в dbStorage. Ошибка", urls: models.MemData{
-			UserID: map[string]models.ShortURL{userID: {map[string]models.URL{"want": {
+			UserID: map[string]models.ShortURL{userID: {ShortURL: map[string]models.URL{"want": {
 				OriginalURL: "err",
 				IsDeleted:   "false",
 			},
