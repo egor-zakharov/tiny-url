@@ -19,8 +19,8 @@ func Test_Add(t *testing.T) {
 		userID   string
 		wantErr  bool
 	}{
-		{name: "Добавление в dbStorage. Успех", urls: models.MemData{UserID: make(map[string]models.ShortURL)}, shortURL: "thisShort", longURL: "thisLong", userID: userID, wantErr: false},
-		{name: "Добавление в dbStorage. Ошибка", urls: models.MemData{
+		{name: "Добавление в memStorage. Успех", urls: models.MemData{UserID: make(map[string]models.ShortURL)}, shortURL: "thisShort", longURL: "thisLong", userID: userID, wantErr: false},
+		{name: "Добавление в memStorage. Ошибка", urls: models.MemData{
 			UserID: map[string]models.ShortURL{userID: {ShortURL: map[string]models.URL{"want": {
 				OriginalURL: "err",
 				IsDeleted:   "false",
@@ -51,14 +51,7 @@ func Test_AddBatch(t *testing.T) {
 		userID   string
 		wantErr  bool
 	}{
-		{name: "Добавление batch в dbStorage. Успех", prepURLs: models.MemData{UserID: make(map[string]models.ShortURL)}, inURLs: map[string]string{"thisShort": "thisLong", "thisShort2": "thisLong2"}, userID: userID, wantErr: false},
-		//{name: "Добавление batch в dbStorage. Ошибка", prepURLs: models.MemData{
-		//	UserID: map[string]models.ShortURL{userID: {map[string]models.URL{"want": {
-		//		OriginalURL: "err",
-		//		IsDeleted:   "false",
-		//	},
-		//	}}},
-		//}, inURLs: map[string]string{"want": "err"}, userID: userID, wantErr: true},
+		{name: "Добавление batch в memStorage. Успех", prepURLs: models.MemData{UserID: make(map[string]models.ShortURL)}, inURLs: map[string]string{"thisShort": "thisLong", "thisShort2": "thisLong2"}, userID: userID, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -82,8 +75,8 @@ func Test_Get(t *testing.T) {
 		longURL  string
 		wantErr  bool
 	}{
-		{name: "Получение из dbStorage. Успех", urls: map[string]string{"short": "long"}, shortURL: "short", longURL: "long", wantErr: false},
-		{name: "Получение из dbStorage. Ошибка", urls: map[string]string{}, shortURL: "want", longURL: "", wantErr: true},
+		{name: "Получение из memStorage. Успех", urls: map[string]string{"short": "long"}, shortURL: "short", longURL: "long", wantErr: false},
+		{name: "Получение из memStorage. Ошибка", urls: map[string]string{}, shortURL: "want", longURL: "", wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -111,8 +104,8 @@ func Test_GetAll(t *testing.T) {
 		userID   string
 		wantErr  bool
 	}{
-		{name: "Получение из dbStorage. Успех", urls: map[string]string{"short": "long"}, shortURL: "short", longURL: "long", userID: userID, wantErr: false},
-		{name: "Получение из dbStorage. Ошибка", urls: nil, shortURL: "want", longURL: "", userID: userID, wantErr: true},
+		{name: "Получение из memStorage. Успех", urls: map[string]string{"short": "long"}, shortURL: "short", longURL: "long", userID: userID, wantErr: false},
+		{name: "Получение из memStorage. Ошибка", urls: nil, shortURL: "want", longURL: "", userID: userID, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

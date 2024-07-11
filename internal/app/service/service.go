@@ -17,6 +17,10 @@ type service struct {
 	storage storage.Storage
 }
 
+func NewService(storage storage.Storage) Service {
+	return &service{storage: storage}
+}
+
 func (s *service) Delete(shortURLs string, ID string) error {
 	err := s.storage.Delete(shortURLs, ID)
 	if err != nil {
@@ -33,18 +37,12 @@ func (s *service) GetAll(ctx context.Context, ID string) (map[string]string, err
 	return urls, nil
 }
 
-func NewService(storage storage.Storage) Service {
-	return &service{storage: storage}
-}
-
-// Для тестов нужен mockgen для storage
 func (s *service) Add(ctx context.Context, url string, ID string) (string, error) {
 	shortURL := encodeURL(url)
 	err := s.storage.Add(ctx, shortURL, url, ID)
 	return shortURL, err
 }
 
-// AddBatch принимает map[correlation_id]original_url - возвращает map[correlation_id]short_url
 func (s *service) AddBatch(ctx context.Context, URLs map[string]string, ID string) (map[string]string, error) {
 	inStore := make(map[string]string, len(URLs))
 	res := make(map[string]string, len(URLs))
@@ -60,7 +58,6 @@ func (s *service) AddBatch(ctx context.Context, URLs map[string]string, ID strin
 	return res, err
 }
 
-// Для тестов нужен mockgen для storage
 func (s *service) Get(ctx context.Context, shortURL string) (string, error) {
 	url, err := s.storage.Get(ctx, shortURL)
 	if err != nil {
@@ -69,7 +66,7 @@ func (s *service) Get(ctx context.Context, shortURL string) (string, error) {
 	return url, nil
 }
 
-// Будем явно валидировать в хендлере
+// ValidateURL - Будем явно валидировать в хендлере
 func (s *service) ValidateURL(url string) error {
 	if ok := re.MatchString(url); !ok {
 		return errInvalidURL

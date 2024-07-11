@@ -30,6 +30,7 @@ type Handlers struct {
 	auth    *auth.Auth
 }
 
+// NewHandlers - create Handlers
 func NewHandlers(service service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper, auth *auth.Auth) *Handlers {
 	return &Handlers{
 		service: service,
@@ -44,18 +45,19 @@ func (h *Handlers) ChiRouter() http.Handler {
 	r := chi.NewRouter()
 
 	r.Mount("/debug", middleware.Profiler())
-	r.Get("/{link}", h.log.RequestLogger(h.zip.GzipMiddleware(h.get)))
-	r.Get("/ping", h.log.RequestLogger(h.zip.GzipMiddleware(h.ping)))
-	r.Get("/api/user/urls", h.log.RequestLogger(h.zip.GzipMiddleware(h.getAll)))
-	r.Post("/", h.log.RequestLogger(h.zip.GzipMiddleware(h.post)))
-	r.Post("/api/shorten", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShorten)))
-	r.Post("/api/shorten/batch", h.log.RequestLogger(h.zip.GzipMiddleware(h.postShortenBatch)))
-	r.Delete("/api/user/urls", h.log.RequestLogger(h.zip.GzipMiddleware(h.deleteBatch)))
+	r.Get("/{link}", h.log.RequestLogger(h.zip.GzipMiddleware(h.Get)))
+	r.Get("/ping", h.log.RequestLogger(h.zip.GzipMiddleware(h.Ping)))
+	r.Get("/api/user/urls", h.log.RequestLogger(h.zip.GzipMiddleware(h.GetAll)))
+	r.Post("/", h.log.RequestLogger(h.zip.GzipMiddleware(h.Post)))
+	r.Post("/api/shorten", h.log.RequestLogger(h.zip.GzipMiddleware(h.PostShorten)))
+	r.Post("/api/shorten/batch", h.log.RequestLogger(h.zip.GzipMiddleware(h.PostShortenBatch)))
+	r.Delete("/api/user/urls", h.log.RequestLogger(h.zip.GzipMiddleware(h.DeleteBatch)))
 
 	return r
 }
 
-func (h *Handlers) get(w http.ResponseWriter, r *http.Request) {
+// Get - handle get /{link} - get record
+func (h *Handlers) Get(w http.ResponseWriter, r *http.Request) {
 	//берем параметр урла
 	shortURL := chi.URLParam(r, "link")
 	//идем в app
@@ -75,8 +77,8 @@ func (h *Handlers) get(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (h *Handlers) getAll(w http.ResponseWriter, r *http.Request) {
-
+// GetAll - handle get /api/user/urls - get all user's records
+func (h *Handlers) GetAll(w http.ResponseWriter, r *http.Request) {
 	//получаем ID
 	ID, err := h.auth.GetID(w, r)
 	if err != nil {
@@ -121,8 +123,8 @@ func (h *Handlers) getAll(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Было бы тоже неплохо замокать ответ сервиса в тесте на успешное получение
-func (h *Handlers) post(w http.ResponseWriter, r *http.Request) {
+// Post - handle / - add record
+func (h *Handlers) Post(w http.ResponseWriter, r *http.Request) {
 
 	//получаем ID
 	ID, err := h.auth.GetID(w, r)
@@ -177,8 +179,8 @@ func (h *Handlers) post(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(newURL.String()))
 }
 
-// Было бы тоже неплохо замокать ответ сервиса в тесте на успешное получение
-func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
+// PostShorten - handle /api/shorten - add shorten record
+func (h *Handlers) PostShorten(w http.ResponseWriter, r *http.Request) {
 	//получаем ID
 	ID, err := h.auth.GetID(w, r)
 	if err != nil {
@@ -239,8 +241,8 @@ func (h *Handlers) postShorten(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Было бы тоже неплохо замокать ответ сервиса в тесте на успешное получение
-func (h *Handlers) postShortenBatch(w http.ResponseWriter, r *http.Request) {
+// PostShortenBatch - handle /api/shorten/batch - add batch shorten record
+func (h *Handlers) PostShortenBatch(w http.ResponseWriter, r *http.Request) {
 	//получаем ID
 	ID, err := h.auth.GetID(w, r)
 	if err != nil {
@@ -312,7 +314,8 @@ func (h *Handlers) postShortenBatch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handlers) deleteBatch(w http.ResponseWriter, r *http.Request) {
+// DeleteBatch - handle /api/user/urls - delete batch record
+func (h *Handlers) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	ID, err := h.auth.GetID(w, r)
 	if err != nil {
 		h.log.GetLog().Sugar().With("error", err).Error("get ID from token")
@@ -338,7 +341,8 @@ func (h *Handlers) deleteBatch(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *Handlers) ping(w http.ResponseWriter, r *http.Request) {
+// Ping - handle /ping - ping db
+func (h *Handlers) Ping(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("pgx", h.config.FlagDB)
 	if err != nil {
 		h.log.GetLog().Sugar().With("error", err).Error("can not open DB")
