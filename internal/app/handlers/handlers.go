@@ -14,12 +14,12 @@ import (
 	"github.com/egor-zakharov/tiny-url/internal/app/storage"
 	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"io"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"time"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type Handlers struct {
@@ -43,6 +43,7 @@ func NewHandlers(service service.Service, config *config.Config, log *logger.Log
 func (h *Handlers) ChiRouter() http.Handler {
 	r := chi.NewRouter()
 
+	r.Mount("/debug", middleware.Profiler())
 	r.Get("/{link}", h.log.RequestLogger(h.zip.GzipMiddleware(h.get)))
 	r.Get("/ping", h.log.RequestLogger(h.zip.GzipMiddleware(h.ping)))
 	r.Get("/api/user/urls", h.log.RequestLogger(h.zip.GzipMiddleware(h.getAll)))
