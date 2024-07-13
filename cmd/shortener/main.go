@@ -10,7 +10,9 @@ import (
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
 	"github.com/egor-zakharov/tiny-url/internal/app/storage"
 	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"net/http"
+	_ "net/http/pprof"
 	"os/signal"
 	"syscall"
 )
