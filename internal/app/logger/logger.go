@@ -7,10 +7,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// Logger -  struct
 type Logger struct {
 	log *zap.Logger
 }
 
+// NewLogger - constructor Logger
 func NewLogger() *Logger {
 	return &Logger{log: zap.NewNop()}
 }
@@ -27,17 +29,20 @@ type (
 	}
 )
 
+// Write - size writer
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	r.responseData.size += size
 	return size, err
 }
 
+// WriteHeader - header writer
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseData.status = statusCode
 }
 
+// Initialize - init log level
 func (l *Logger) Initialize(level string) error {
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
@@ -53,6 +58,7 @@ func (l *Logger) Initialize(level string) error {
 	return nil
 }
 
+// RequestLogger - logger middleware
 func (l *Logger) RequestLogger(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -80,6 +86,7 @@ func (l *Logger) RequestLogger(h http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
+// GetLog - get logger zap
 func (l *Logger) GetLog() *zap.Logger {
 	return l.log
 }

@@ -7,9 +7,11 @@ import (
 	"strings"
 )
 
+// Zipper -  struct
 type Zipper struct {
 }
 
+// NewZipper - constructor Zipper
 func NewZipper() *Zipper {
 	return &Zipper{}
 }
@@ -28,14 +30,17 @@ func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	}
 }
 
+// Header - get header
 func (c *compressWriter) Header() http.Header {
 	return c.w.Header()
 }
 
+// Write - write compressed
 func (c *compressWriter) Write(p []byte) (int, error) {
 	return c.zw.Write(p)
 }
 
+// WriteHeader - set header
 func (c *compressWriter) WriteHeader(statusCode int) {
 	if statusCode < 300 {
 		c.w.Header().Set("Content-Encoding", "gzip")
@@ -67,10 +72,12 @@ func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	}, nil
 }
 
+// Read - reader
 func (c compressReader) Read(p []byte) (n int, err error) {
 	return c.zr.Read(p)
 }
 
+// Close - close smthg
 func (c *compressReader) Close() error {
 	if err := c.r.Close(); err != nil {
 		return err
@@ -78,6 +85,7 @@ func (c *compressReader) Close() error {
 	return c.zr.Close()
 }
 
+// GzipMiddleware - compress middleware
 func (z *Zipper) GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// по умолчанию устанавливаем оригинальный http.ResponseWriter как тот,

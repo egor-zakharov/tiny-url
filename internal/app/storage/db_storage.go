@@ -9,23 +9,27 @@ import (
 	"time"
 )
 
+// timeOut - timeout db
 const timeOut = 500 * time.Millisecond
 
 type dbStorage struct {
 	db *sql.DB
 }
 
-func (db *dbStorage) Delete(shortURLs string, ID string) error {
-	_, err := db.db.Exec(`UPDATE urls set is_deleted=true WHERE short_url=$1 and user_id=$2`, shortURLs, ID)
-	return err
-}
-
+// NewDBStorage - constructor db storage
 func NewDBStorage(ctx context.Context, db *sql.DB) Storage {
 	dbs := &dbStorage{db: db}
 	_ = dbs.init(ctx)
 	return dbs
 }
 
+// Delete - delete url
+func (db *dbStorage) Delete(shortURLs string, ID string) error {
+	_, err := db.db.Exec(`UPDATE urls set is_deleted=true WHERE short_url=$1 and user_id=$2`, shortURLs, ID)
+	return err
+}
+
+// Add - add url
 func (db *dbStorage) Add(ctx context.Context, shortURL string, url string, ID string) error {
 	ctx, cancel := context.WithTimeout(ctx, timeOut)
 	defer cancel()
@@ -37,6 +41,8 @@ func (db *dbStorage) Add(ctx context.Context, shortURL string, url string, ID st
 	}
 	return err
 }
+
+// AddBatch - add urls
 func (db *dbStorage) AddBatch(ctx context.Context, URLs map[string]string, ID string) error {
 	// начинаем транзакцию
 	tx, err := db.db.Begin()
@@ -54,6 +60,7 @@ func (db *dbStorage) AddBatch(ctx context.Context, URLs map[string]string, ID st
 	return tx.Commit()
 }
 
+// Get - get url
 func (db *dbStorage) Get(ctx context.Context, shortURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeOut)
 	defer cancel()
@@ -68,6 +75,7 @@ func (db *dbStorage) Get(ctx context.Context, shortURL string) (string, error) {
 	return url, err
 }
 
+// GetAll - get urls
 func (db *dbStorage) GetAll(ctx context.Context, ID string) (map[string]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeOut)
 	defer cancel()
@@ -112,5 +120,6 @@ func (db *dbStorage) init(ctx context.Context) error {
 	return err
 }
 
+// Backup - not implemented for db storage
 func (db *dbStorage) Backup() {
 }
