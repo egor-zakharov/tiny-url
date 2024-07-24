@@ -64,8 +64,8 @@ func Test_Post(t *testing.T) {
 		name                 string
 		method               string
 		requestBody          string
-		expectedCode         int
 		expectedResponseBody string
+		expectedCode         int
 	}{
 		{name: "Проверка запроса без тела", method: http.MethodPost, requestBody: "", expectedCode: http.StatusBadRequest, expectedResponseBody: ""},
 		{name: "Проверка запроса с телом", method: http.MethodPost, requestBody: "https://practicum.yandex.ru/", expectedCode: http.StatusCreated, expectedResponseBody: "http://localhost:8080/V4LnJ1Lw"},
@@ -101,8 +101,8 @@ func Test_PostShorten(t *testing.T) {
 		name                 string
 		method               string
 		requestBody          models.Request
-		expectedCode         int
 		expectedResponseBody models.Response
+		expectedCode         int
 	}{
 		{name: "Проверка запроса без тела", method: http.MethodPost, requestBody: models.Request{}, expectedCode: http.StatusBadRequest, expectedResponseBody: models.Response{}},
 		{name: "Проверка запроса с телом", method: http.MethodPost, requestBody: models.Request{URL: "https://practicum.yandex.ru/"}, expectedCode: http.StatusCreated, expectedResponseBody: models.Response{Result: "http://localhost:8080/V4LnJ1Lw"}},
@@ -141,8 +141,8 @@ func Test_PostShortenBatch(t *testing.T) {
 		name                 string
 		method               string
 		requestBody          []models.ShortenBatchRequest
-		expectedCode         int
 		expectedResponseBody []models.ShortenBatchResponse
+		expectedCode         int
 	}{
 
 		{name: "Проверка запроса с телом", method: http.MethodPost, requestBody: []models.ShortenBatchRequest{
@@ -188,8 +188,8 @@ func Test_get(t *testing.T) {
 		name             string
 		method           string
 		path             string
-		expectedCode     int
 		expectedLocation string
+		expectedCode     int
 	}{
 		{name: "Проверка отсутствующего URL", method: http.MethodGet, path: "/urlNotFound", expectedCode: http.StatusNoContent, expectedLocation: ""},
 		{name: "Проверка Location", method: http.MethodGet, path: "/V4LnJ1Lw", expectedCode: http.StatusTemporaryRedirect, expectedLocation: "https://practicum.yandex.ru/"},
@@ -240,6 +240,66 @@ func Test_getAll(t *testing.T) {
 			// проверка статус кода
 			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
 
+		})
+	}
+}
+
+func TestHandlers_DeleteBatch(t *testing.T) {
+	log := logger.NewLogger()
+	store := storage.NewMemStorage("")
+	srv := service.NewService(store)
+	zip := zipper.NewZipper()
+	newAuth := auth.NewAuth()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
+	tests := []struct {
+		name         string
+		method       string
+		requestBody  models.DeleteBatchRequest
+		expectedCode int
+	}{
+		{name: "Проверка запроса с телом", method: http.MethodDelete,
+			requestBody:  models.DeleteBatchRequest{"123", "312"},
+			expectedCode: http.StatusAccepted},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, _ := json.Marshal(tt.requestBody)
+			stringReader := strings.NewReader(string(out))
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			defer ts.Close()
+			resp, _ := testRequestNoRedirect(t, ts, tt.method, "/api/user/urls", stringReader)
+			resp.Body.Close()
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
+		})
+	}
+}
+
+func TestHandlers_Ping(t *testing.T) {
+	log := logger.NewLogger()
+	store := storage.NewMemStorage("")
+	srv := service.NewService(store)
+	zip := zipper.NewZipper()
+	newAuth := auth.NewAuth()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
+	tests := []struct {
+		name         string
+		method       string
+		expectedCode int
+	}{
+		{name: "База данных не инициализирова", method: http.MethodGet,
+			expectedCode: http.StatusInternalServerError},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			defer ts.Close()
+			resp, _ := testRequestNoRedirect(t, ts, tt.method, "/ping", nil)
+			resp.Body.Close()
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
 		})
 	}
 }

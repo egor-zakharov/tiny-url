@@ -194,7 +194,7 @@ func (h *Handlers) PostShorten(w http.ResponseWriter, r *http.Request) {
 
 	var req models.Request
 	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&req); err != nil {
+	if err = dec.Decode(&req); err != nil {
 		h.log.GetLog().Sugar().With("error", err).Error("decode request")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -256,7 +256,7 @@ func (h *Handlers) PostShortenBatch(w http.ResponseWriter, r *http.Request) {
 
 	var req []models.ShortenBatchRequest
 	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&req); err != nil {
+	if err = dec.Decode(&req); err != nil {
 		h.log.GetLog().Sugar().With("error", err).Error("decode request")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -264,7 +264,7 @@ func (h *Handlers) PostShortenBatch(w http.ResponseWriter, r *http.Request) {
 
 	for _, v := range req {
 		//валидируем полученное тело`
-		err := h.service.ValidateURL(v.URL)
+		err = h.service.ValidateURL(v.URL)
 		if err != nil {
 			h.log.GetLog().Sugar().With("error", err).Error("validate url")
 			w.WriteHeader(http.StatusBadRequest)

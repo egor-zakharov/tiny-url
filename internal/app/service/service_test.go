@@ -61,10 +61,10 @@ func Test_service_Delete(t *testing.T) {
 		ID        string
 	}
 	tests := []struct {
-		name    string
 		fields  fields
-		args    args
 		wantErr assert.ErrorAssertionFunc
+		args    args
+		name    string
 	}{
 		{
 			name: "Delete success",
@@ -120,11 +120,11 @@ func Test_service_GetAll(t *testing.T) {
 		ID  string
 	}
 	tests := []struct {
-		name    string
 		fields  fields
-		args    args
 		want    map[string]string
 		wantErr assert.ErrorAssertionFunc
+		args    args
+		name    string
 	}{
 		{
 			name: "GetAll success",
@@ -189,11 +189,11 @@ func Test_service_Add(t *testing.T) {
 		ID  string
 	}
 	tests := []struct {
-		name    string
 		fields  fields
-		args    args
-		want    string
 		wantErr assert.ErrorAssertionFunc
+		args    args
+		name    string
+		want    string
 	}{
 		{
 			name: "Add success",
@@ -258,11 +258,11 @@ func Test_service_Get(t *testing.T) {
 		shortURL string
 	}
 	tests := []struct {
-		name    string
 		fields  fields
-		args    args
-		want    string
 		wantErr assert.ErrorAssertionFunc
+		args    args
+		name    string
+		want    string
 	}{
 		{
 			name: "Get success",
@@ -328,11 +328,11 @@ func Test_service_AddBatch(t *testing.T) {
 		ID   string
 	}
 	tests := []struct {
-		name    string
 		fields  fields
-		args    args
 		want    map[string]string
 		wantErr assert.ErrorAssertionFunc
+		args    args
+		name    string
 	}{
 		{
 			name: "Add batch success",

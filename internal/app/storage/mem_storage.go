@@ -10,8 +10,8 @@ import (
 
 type storage struct {
 	urls models.MemData
-	mu   sync.RWMutex
 	file *os.File
+	mu   sync.RWMutex
 }
 
 // NewMemStorage - constructor mem storage
