@@ -124,6 +124,32 @@ func Test_GetAll(t *testing.T) {
 	}
 }
 
+func Test_storage_Delete(t *testing.T) {
+	tests := []struct {
+		name     string
+		urls     map[string]string
+		shortURL string
+		longURL  string
+		userID   string
+		wantErr  bool
+	}{
+		{name: "Удаление из memStorage. Успех", urls: map[string]string{"short": "long"}, shortURL: "short", longURL: "long", userID: userID, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewMemStorage("")
+			if !tt.wantErr {
+				_ = s.Add(context.Background(), tt.shortURL, tt.longURL, userID)
+			}
+			err := s.Delete(tt.shortURL, tt.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddNew() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
 func BenchmarkStorage_AddBatch(b *testing.B) {
 	s := storage{
 		urls: models.MemData{UserID: make(map[string]models.ShortURL)},

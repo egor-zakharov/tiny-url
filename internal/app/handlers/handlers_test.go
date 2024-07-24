@@ -243,3 +243,63 @@ func Test_getAll(t *testing.T) {
 		})
 	}
 }
+
+func TestHandlers_DeleteBatch(t *testing.T) {
+	log := logger.NewLogger()
+	store := storage.NewMemStorage("")
+	srv := service.NewService(store)
+	zip := zipper.NewZipper()
+	newAuth := auth.NewAuth()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
+	tests := []struct {
+		name         string
+		method       string
+		requestBody  models.DeleteBatchRequest
+		expectedCode int
+	}{
+		{name: "Проверка запроса с телом", method: http.MethodDelete,
+			requestBody:  models.DeleteBatchRequest{"123", "312"},
+			expectedCode: http.StatusAccepted},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, _ := json.Marshal(tt.requestBody)
+			stringReader := strings.NewReader(string(out))
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			defer ts.Close()
+			resp, _ := testRequestNoRedirect(t, ts, tt.method, "/api/user/urls", stringReader)
+			resp.Body.Close()
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
+		})
+	}
+}
+
+func TestHandlers_Ping(t *testing.T) {
+	log := logger.NewLogger()
+	store := storage.NewMemStorage("")
+	srv := service.NewService(store)
+	zip := zipper.NewZipper()
+	newAuth := auth.NewAuth()
+	conf := config.NewConfig()
+	conf.FlagShortAddr = baseURL
+	tests := []struct {
+		name         string
+		method       string
+		expectedCode int
+	}{
+		{name: "База данных не инициализирова", method: http.MethodGet,
+			expectedCode: http.StatusInternalServerError},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			defer ts.Close()
+			resp, _ := testRequestNoRedirect(t, ts, tt.method, "/ping", nil)
+			resp.Body.Close()
+			// проверка статус кода
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "Код ответа не совпадает с ожидаемым")
+		})
+	}
+}
