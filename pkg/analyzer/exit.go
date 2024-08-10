@@ -27,7 +27,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			case *ast.SelectorExpr:
 				ident, ok := x.X.(*ast.Ident)
 				if packageIsMain && funcIsMain && ok && ident.Name == "os" && x.Sel.Name == "Exit" {
-					pass.Reportf(ident.NamePos, "os.Exit called in main func in main package")
+					pass.Reportf(ident.NamePos, "can't use osExit with exit code")
 				}
 			}
 			return true
