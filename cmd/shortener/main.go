@@ -10,6 +10,7 @@ import (
 	"github.com/egor-zakharov/tiny-url/internal/app/logger"
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
 	"github.com/egor-zakharov/tiny-url/internal/app/storage"
+	"github.com/egor-zakharov/tiny-url/internal/app/tls"
 	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"net/http"
@@ -60,13 +61,24 @@ func main() {
 
 	log.GetLog().Sugar().Infow("Log level", "level", conf.FlagLogLevel)
 	log.GetLog().Sugar().Infow("File storage", "file", conf.FlagStoragePath)
-	log.GetLog().Sugar().Infow("Running server", "address", conf.FlagRunAddr)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
-		err = http.ListenAndServe(conf.FlagRunAddr, handls.ChiRouter())
+		if conf.FlagHTTPS == "true" {
+			log.GetLog().Sugar().Infow("Running server on https", "enabled", conf.FlagHTTPS, "address", conf.FlagRunAddr)
+			const (
+				certFilePath = "cert.pem" // certFilePath - path to TLS certificate
+				keyFilePath  = "key.pem"  // keyFilePath - path to TLS key
+			)
+			err = tls.CreateTLSCert(certFilePath, keyFilePath)
+			err = http.ListenAndServeTLS(conf.FlagRunAddr, certFilePath, keyFilePath, handls.ChiRouter())
+		} else {
+			log.GetLog().Sugar().Infow("Running server", "address", conf.FlagRunAddr)
+			err = http.ListenAndServe(conf.FlagRunAddr, handls.ChiRouter())
+		}
+
 		if err != nil {
 			panic(err)
 		}

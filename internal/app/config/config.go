@@ -12,6 +12,7 @@ type Config struct {
 	FlagLogLevel    string
 	FlagStoragePath string
 	FlagDB          string
+	FlagHTTPS       string
 }
 
 // NewConfig - constructor Config
@@ -26,6 +27,7 @@ func (c *Config) ParseFlag() {
 	flag.StringVar(&c.FlagLogLevel, "l", "info", "log level")
 	flag.StringVar(&c.FlagStoragePath, "f", "C:\\Users\\edzakharov\\Documents\\GoAdv\\tiny-url\\short-url-db.json", "file storage path")
 	flag.StringVar(&c.FlagDB, "d", "postgres://postgres:admin@localhost:5432/urls?sslmode=disable", "database dsn")
+	flag.StringVar(&c.FlagDB, "s", "false", "https enable")
 
 	flag.Parse()
 
@@ -47,5 +49,9 @@ func (c *Config) ParseFlag() {
 
 	if envDB := os.Getenv("DATABASE_DSN"); envDB != "" {
 		c.FlagDB = envDB
+	}
+
+	if envHTTPS := os.Getenv("ENABLE_HTTPS"); envHTTPS != "" {
+		c.FlagHTTPS = envHTTPS
 	}
 }
