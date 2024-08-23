@@ -66,7 +66,7 @@ func main() {
 	defer stop()
 
 	go func() {
-		if conf.FlagHTTPS == "true" {
+		if conf.FlagHTTPS {
 			log.GetLog().Sugar().Infow("Running server on https", "enabled", conf.FlagHTTPS, "address", conf.FlagRunAddr)
 			const (
 				certFilePath = "cert.pem" // certFilePath - path to TLS certificate
