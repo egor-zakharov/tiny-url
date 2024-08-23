@@ -23,3 +23,9 @@ type ShortURL struct {
 type MemData struct {
 	UserID map[string]ShortURL `json:"user_id"`
 }
+
+// Stats - struct for stats
+type Stats struct {
+	Urls  int `json:"urls"`
+	Users int `json:"users"`
+}

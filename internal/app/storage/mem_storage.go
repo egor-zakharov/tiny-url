@@ -117,6 +117,23 @@ func (s *storage) Get(_ context.Context, shortURL string) (string, error) {
 	return "", ErrNotFound
 }
 
+// GetStats - get stats urls, users
+func (s *storage) GetStats(_ context.Context) (models.Stats, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	users := len(s.urls.UserID)
+	urls := 0
+	for _, v := range s.urls.UserID {
+		urls += len(v.ShortURL)
+	}
+	stats := models.Stats{
+		Users: users,
+		Urls:  urls,
+	}
+	return stats, nil
+}
+
 func (s *storage) restore(file string) {
 	s.file, _ = os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
 

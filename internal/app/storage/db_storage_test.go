@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"regexp"
@@ -97,4 +98,26 @@ func Test_dbStorage_AddBatch(t *testing.T) {
 	mock.ExpectCommit()
 	err = s.AddBatch(ctx, map[string]string{"1": "1"}, "1")
 	assert.NoError(t, err)
+}
+
+func Test_dbStorage_GetStats(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	ctx := context.Background()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+	s := NewDBStorage(ctx, db)
+
+	row := mock.NewRows([]string{"count", "count"}).AddRow(1, 2)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(urls), count(distinct(user_id)) from urls")).
+		WillReturnRows(row)
+	want := models.Stats{
+		Urls:  1,
+		Users: 2,
+	}
+	got, _ := s.GetStats(ctx)
+	if want != got {
+		t.Errorf("got %v want %v", got, want)
+	}
 }

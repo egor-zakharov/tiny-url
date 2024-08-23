@@ -10,13 +10,14 @@ import (
 
 // Config - struct
 type Config struct {
-	FlagRunAddr     string `json:"server_address"`
-	FlagShortAddr   string `json:"base_url"`
-	FlagLogLevel    string
-	FlagStoragePath string `json:"file_storage_path"`
-	FlagDB          string `json:"database_dsn"`
-	FlagHTTPS       bool   `json:"enable_https"`
-	FlagConfigPath  string
+	FlagRunAddr       string `json:"server_address"`
+	FlagShortAddr     string `json:"base_url"`
+	FlagLogLevel      string
+	FlagStoragePath   string `json:"file_storage_path"`
+	FlagDB            string `json:"database_dsn"`
+	FlagHTTPS         bool   `json:"enable_https"`
+	FlagConfigPath    string
+	FlagTrustedSubnet string `json:"trusted_subnet"`
 }
 
 // NewConfig - constructor Config
@@ -30,10 +31,10 @@ func (c *Config) ParseFlag() {
 	flag.StringVar(&c.FlagShortAddr, "b", "http://localhost:8080", "address and port to short url")
 	flag.StringVar(&c.FlagLogLevel, "l", "info", "log level")
 	flag.StringVar(&c.FlagStoragePath, "f", "C:\\Users\\edzakharov\\Documents\\GoAdv\\tiny-url\\short-url-db.json", "file storage path")
-	flag.StringVar(&c.FlagDB, "d", "postgres://postgres:admin@localhost:5432/urls?sslmode=disable", "database dsn")
+	flag.StringVar(&c.FlagDB, "d", "postgres://admin:admin@localhost:5432/db?sslmode=disable", "database dsn")
 	flag.BoolVar(&c.FlagHTTPS, "s", false, "https enable")
 	flag.StringVar(&c.FlagConfigPath, "c", "", "config path")
-
+	flag.StringVar(&c.FlagTrustedSubnet, "t", "", "CIDR")
 	flag.Parse()
 
 	if envConfigPath := os.Getenv("CONFIG"); envConfigPath != "" {
@@ -63,6 +64,10 @@ func (c *Config) ParseFlag() {
 		if !isFlagPresented("s") {
 			c.FlagHTTPS = fileConfig.FlagHTTPS
 		}
+
+		if !isFlagPresented("t") {
+			c.FlagTrustedSubnet = fileConfig.FlagTrustedSubnet
+		}
 	}
 
 	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {
@@ -87,6 +92,10 @@ func (c *Config) ParseFlag() {
 
 	if envHTTPS := os.Getenv("ENABLE_HTTPS"); envHTTPS != "" {
 		c.FlagHTTPS, _ = strconv.ParseBool(envHTTPS)
+	}
+
+	if envTrustedSubnet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubnet != "" {
+		c.FlagTrustedSubnet = envTrustedSubnet
 	}
 }
 

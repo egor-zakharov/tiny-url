@@ -1,6 +1,9 @@
 package service
 
-import "context"
+import (
+	"context"
+	"github.com/egor-zakharov/tiny-url/internal/app/models"
+)
 
 //go:generate mockgen -source=contract.go -destination=contract_mock.go -package=service
 
@@ -18,4 +21,6 @@ type Service interface {
 	ValidateURL(url string) error
 	// Delete - delete url
 	Delete(shortURLs string, ID string) error
+	// GetStats - get stats urls, users
+	GetStats(ctx context.Context) (models.Stats, error)
 }

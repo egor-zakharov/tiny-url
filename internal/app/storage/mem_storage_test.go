@@ -150,6 +150,37 @@ func Test_storage_Delete(t *testing.T) {
 	}
 }
 
+func Test_storage_GetStats(t *testing.T) {
+	tests := []struct {
+		name     string
+		urls     models.Stats
+		shortURL string
+		longURL  string
+		userID   string
+		wantErr  bool
+	}{
+		{name: "GetStats из memStorage. Успех", urls: models.Stats{
+			Users: 1,
+			Urls:  1,
+		}, shortURL: "short", longURL: "long", userID: userID, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewMemStorage("")
+			if !tt.wantErr {
+				_ = s.Add(context.Background(), tt.shortURL, tt.longURL, userID)
+			}
+			urls, err := s.GetStats(context.Background())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetStats() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.urls, urls)
+
+		})
+	}
+}
+
 func BenchmarkStorage_AddBatch(b *testing.B) {
 	s := storage{
 		urls: models.MemData{UserID: make(map[string]models.ShortURL)},

@@ -3,5 +3,6 @@
   "base_url": "http://localhost:8080",
   "file_storage_path": "C:\\Users\\edzakharov\\Documents\\GoAdv\\tiny-url\\short-url-db.json",
   "database_dsn": "postgres://postgres:admin@localhost:5432/urls?sslmode=disable",
-  "enable_https": false
+  "enable_https": false,
+  "trusted_subnet": "0.0.0.0/0"
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/egor-zakharov/tiny-url/internal/app/auth"
 	"github.com/egor-zakharov/tiny-url/internal/app/config"
+	"github.com/egor-zakharov/tiny-url/internal/app/whitelist"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -58,6 +59,7 @@ func Test_Post(t *testing.T) {
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	newAuth := auth.NewAuth()
+	whiteList := whitelist.NewWhiteList(nil)
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -73,7 +75,7 @@ func Test_Post(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stringReader := strings.NewReader(tt.requestBody)
-			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth, whiteList).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/", stringReader)
 			resp.Body.Close()
@@ -96,6 +98,7 @@ func Test_PostShorten(t *testing.T) {
 	zip := zipper.NewZipper()
 	conf := config.NewConfig()
 	newAuth := auth.NewAuth()
+	whiteList := whitelist.NewWhiteList(nil)
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
 		name                 string
@@ -111,7 +114,7 @@ func Test_PostShorten(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, _ := json.Marshal(tt.requestBody)
 			stringReader := strings.NewReader(string(out))
-			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth, whiteList).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/api/shorten", stringReader)
 			resp.Body.Close()
@@ -135,6 +138,7 @@ func Test_PostShortenBatch(t *testing.T) {
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	newAuth := auth.NewAuth()
+	whiteList := whitelist.NewWhiteList(nil)
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -161,7 +165,7 @@ func Test_PostShortenBatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, _ := json.Marshal(tt.requestBody)
 			stringReader := strings.NewReader(string(out))
-			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth, whiteList).ChiRouter())
 			defer ts.Close()
 			resp, body := testRequestNoRedirect(t, ts, tt.method, "/api/shorten/batch", stringReader)
 			resp.Body.Close()
@@ -182,6 +186,7 @@ func Test_get(t *testing.T) {
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	newAuth := auth.NewAuth()
+	whiteList := whitelist.NewWhiteList(nil)
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -196,7 +201,7 @@ func Test_get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewHandlers(srv, conf, log, zip, newAuth)
+			h := NewHandlers(srv, conf, log, zip, newAuth, whiteList)
 			if tt.expectedLocation != "" {
 				h.service.Add(context.Background(), tt.expectedLocation, ID)
 			}
@@ -221,6 +226,7 @@ func Test_getAll(t *testing.T) {
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	newAuth := auth.NewAuth()
+	whiteList := whitelist.NewWhiteList(nil)
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -232,7 +238,7 @@ func Test_getAll(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewHandlers(srv, conf, log, zip, newAuth)
+			h := NewHandlers(srv, conf, log, zip, newAuth, whiteList)
 			ts := httptest.NewServer(h.ChiRouter())
 			defer ts.Close()
 			resp, _ := testRequestNoRedirect(t, ts, tt.method, "/api/user/urls", nil)
@@ -250,6 +256,7 @@ func TestHandlers_DeleteBatch(t *testing.T) {
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	newAuth := auth.NewAuth()
+	whiteList := whitelist.NewWhiteList(nil)
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -266,7 +273,7 @@ func TestHandlers_DeleteBatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, _ := json.Marshal(tt.requestBody)
 			stringReader := strings.NewReader(string(out))
-			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth, whiteList).ChiRouter())
 			defer ts.Close()
 			resp, _ := testRequestNoRedirect(t, ts, tt.method, "/api/user/urls", stringReader)
 			resp.Body.Close()
@@ -282,6 +289,7 @@ func TestHandlers_Ping(t *testing.T) {
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	newAuth := auth.NewAuth()
+	whiteList := whitelist.NewWhiteList(nil)
 	conf := config.NewConfig()
 	conf.FlagShortAddr = baseURL
 	tests := []struct {
@@ -294,7 +302,7 @@ func TestHandlers_Ping(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth).ChiRouter())
+			ts := httptest.NewServer(NewHandlers(srv, conf, log, zip, newAuth, whiteList).ChiRouter())
 			defer ts.Close()
 			resp, _ := testRequestNoRedirect(t, ts, tt.method, "/ping", nil)
 			resp.Body.Close()
