@@ -18,6 +18,7 @@ type Config struct {
 	FlagHTTPS         bool   `json:"enable_https"`
 	FlagConfigPath    string
 	FlagTrustedSubnet string `json:"trusted_subnet"`
+	FlagRunGRPCAddr   string `json:"grpc_address"`
 }
 
 // NewConfig - constructor Config
@@ -35,6 +36,8 @@ func (c *Config) ParseFlag() {
 	flag.BoolVar(&c.FlagHTTPS, "s", false, "https enable")
 	flag.StringVar(&c.FlagConfigPath, "c", "", "config path")
 	flag.StringVar(&c.FlagTrustedSubnet, "t", "", "CIDR")
+	flag.StringVar(&c.FlagRunGRPCAddr, "g", "localhost:8081", "address and port to run grpc server")
+
 	flag.Parse()
 
 	if envConfigPath := os.Getenv("CONFIG"); envConfigPath != "" {
@@ -68,6 +71,10 @@ func (c *Config) ParseFlag() {
 		if !isFlagPresented("t") {
 			c.FlagTrustedSubnet = fileConfig.FlagTrustedSubnet
 		}
+
+		if !isFlagPresented("g") {
+			c.FlagRunGRPCAddr = fileConfig.FlagRunGRPCAddr
+		}
 	}
 
 	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {
@@ -96,6 +103,10 @@ func (c *Config) ParseFlag() {
 
 	if envTrustedSubnet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubnet != "" {
 		c.FlagTrustedSubnet = envTrustedSubnet
+	}
+
+	if envGRPCAddress := os.Getenv("TRUSTED_SUBNET"); envGRPCAddress != "" {
+		c.FlagRunGRPCAddr = envGRPCAddress
 	}
 }
 

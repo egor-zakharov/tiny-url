@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/egor-zakharov/tiny-url/internal/app/auth"
 	"github.com/egor-zakharov/tiny-url/internal/app/config"
+	"github.com/egor-zakharov/tiny-url/internal/app/grpchandlers"
 	"github.com/egor-zakharov/tiny-url/internal/app/handlers"
 	"github.com/egor-zakharov/tiny-url/internal/app/logger"
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
@@ -13,7 +14,10 @@ import (
 	"github.com/egor-zakharov/tiny-url/internal/app/tls"
 	"github.com/egor-zakharov/tiny-url/internal/app/whitelist"
 	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
+	pb "github.com/egor-zakharov/tiny-url/internal/proto"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -70,6 +74,7 @@ func main() {
 	authz := auth.NewAuth()
 	whiteList := whitelist.NewWhiteList(trustedNet)
 	handls := handlers.NewHandlers(srv, conf, log, zip, authz, whiteList)
+	grpcHandlers := grpchandlers.NewShortenerServer(srv, log, authz, conf)
 
 	log.GetLog().Sugar().Infow("Log level", "level", conf.FlagLogLevel)
 	log.GetLog().Sugar().Infow("File storage", "file", conf.FlagStoragePath)
@@ -77,24 +82,46 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
-	go func() {
-		if conf.FlagHTTPS {
-			log.GetLog().Sugar().Infow("Running server on https", "enabled", conf.FlagHTTPS, "address", conf.FlagRunAddr)
-			const (
-				certFilePath = "cert.pem" // certFilePath - path to TLS certificate
-				keyFilePath  = "key.pem"  // keyFilePath - path to TLS key
-			)
-			err = tls.CreateTLSCert(certFilePath, keyFilePath)
-			err = http.ListenAndServeTLS(conf.FlagRunAddr, certFilePath, keyFilePath, handls.ChiRouter())
-		} else {
-			log.GetLog().Sugar().Infow("Running server", "address", conf.FlagRunAddr)
-			err = http.ListenAndServe(conf.FlagRunAddr, handls.ChiRouter())
-		}
+	if conf.FlagRunGRPCAddr != "" {
+		go func() {
+			listen, err := net.Listen("tcp", conf.FlagRunGRPCAddr)
+			if err != nil {
+				panic(err)
+			}
+			excludeMethod := []string{
+				"/proto.shortener.ShortenerService/Auth",
+				"/proto.shortener.ShortenerService/GetURL",
+				"/proto.shortener.ShortenerService/Stats"}
+			s := grpc.NewServer(grpc.UnaryInterceptor(auth.ExcludeMethodsInterceptor(excludeMethod, auth.Interceptor)))
+			pb.RegisterShortenerServiceServer(s, grpcHandlers)
+			reflection.Register(s)
 
-		if err != nil {
-			panic(err)
-		}
-	}()
+			err = s.Serve(listen)
+			log.GetLog().Sugar().Infow("Running grpc server", "address", conf.FlagRunGRPCAddr)
+			if err != nil {
+				panic(err)
+			}
+		}()
+	} else {
+		go func() {
+			if conf.FlagHTTPS {
+				log.GetLog().Sugar().Infow("Running server on https", "enabled", conf.FlagHTTPS, "address", conf.FlagRunAddr)
+				const (
+					certFilePath = "cert.pem" // certFilePath - path to TLS certificate
+					keyFilePath  = "key.pem"  // keyFilePath - path to TLS key
+				)
+				err = tls.CreateTLSCert(certFilePath, keyFilePath)
+				err = http.ListenAndServeTLS(conf.FlagRunAddr, certFilePath, keyFilePath, handls.ChiRouter())
+			} else {
+				log.GetLog().Sugar().Infow("Running server", "address", conf.FlagRunAddr)
+				err = http.ListenAndServe(conf.FlagRunAddr, handls.ChiRouter())
+			}
+
+			if err != nil {
+				panic(err)
+			}
+		}()
+	}
 	<-ctx.Done()
 
 }

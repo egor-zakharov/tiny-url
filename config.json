@@ -4,5 +4,6 @@
   "file_storage_path": "C:\\Users\\edzakharov\\Documents\\GoAdv\\tiny-url\\short-url-db.json",
   "database_dsn": "postgres://postgres:admin@localhost:5432/urls?sslmode=disable",
   "enable_https": false,
-  "trusted_subnet": "0.0.0.0/0"
+  "trusted_subnet": "0.0.0.0/0",
+  "grpc_address": "localhost:8081"
 }
