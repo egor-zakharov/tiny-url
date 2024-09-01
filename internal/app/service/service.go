@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/egor-zakharov/tiny-url/internal/app/storage"
 	"regexp"
 )
@@ -70,6 +71,11 @@ func (s *service) Get(ctx context.Context, shortURL string) (string, error) {
 		return url, err
 	}
 	return url, nil
+}
+
+// GetStats - получение статистики
+func (s *service) GetStats(ctx context.Context) (models.Stats, error) {
+	return s.storage.GetStats(ctx)
 }
 
 // ValidateURL - Будем явно валидировать в хендлере

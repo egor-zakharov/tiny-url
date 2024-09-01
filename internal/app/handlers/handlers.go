@@ -12,6 +12,7 @@ import (
 	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
 	"github.com/egor-zakharov/tiny-url/internal/app/storage"
+	"github.com/egor-zakharov/tiny-url/internal/app/whitelist"
 	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,21 +25,23 @@ import (
 
 // Handlers - handlers struct
 type Handlers struct {
-	service service.Service
-	log     *logger.Logger
-	config  *config.Config
-	zip     *zipper.Zipper
-	auth    *auth.Auth
+	service   service.Service
+	log       *logger.Logger
+	config    *config.Config
+	zip       *zipper.Zipper
+	auth      *auth.Auth
+	whitelist *whitelist.WhiteList
 }
 
 // NewHandlers - constructor Handlers
-func NewHandlers(service service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper, auth *auth.Auth) *Handlers {
+func NewHandlers(service service.Service, config *config.Config, log *logger.Logger, zipper *zipper.Zipper, auth *auth.Auth, whitelist *whitelist.WhiteList) *Handlers {
 	return &Handlers{
-		service: service,
-		config:  config,
-		log:     log,
-		zip:     zipper,
-		auth:    auth,
+		service:   service,
+		config:    config,
+		log:       log,
+		zip:       zipper,
+		auth:      auth,
+		whitelist: whitelist,
 	}
 }
 
@@ -54,6 +57,7 @@ func (h *Handlers) ChiRouter() http.Handler {
 	r.Post("/api/shorten", h.log.RequestLogger(h.zip.GzipMiddleware(h.PostShorten)))
 	r.Post("/api/shorten/batch", h.log.RequestLogger(h.zip.GzipMiddleware(h.PostShortenBatch)))
 	r.Delete("/api/user/urls", h.log.RequestLogger(h.zip.GzipMiddleware(h.DeleteBatch)))
+	r.Get("/api/internal/stats", h.log.RequestLogger(h.zip.GzipMiddleware(h.whitelist.Handler(h.GetStats))))
 
 	return r
 }
@@ -341,6 +345,27 @@ func (h *Handlers) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 
+}
+
+// GetStats - handle /api/internal/stats - get stats
+func (h *Handlers) GetStats(w http.ResponseWriter, r *http.Request) {
+	stats, err := h.service.GetStats(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	resp := models.StatsResponse(stats)
+
+	//формирование ответа
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	// сериализуем ответ сервера
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(resp); err != nil {
+		return
+	}
 }
 
 // Ping - handle /ping - ping db

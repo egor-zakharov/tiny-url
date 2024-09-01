@@ -11,8 +11,10 @@ import (
 	"github.com/egor-zakharov/tiny-url/internal/app/service"
 	"github.com/egor-zakharov/tiny-url/internal/app/storage"
 	"github.com/egor-zakharov/tiny-url/internal/app/tls"
+	"github.com/egor-zakharov/tiny-url/internal/app/whitelist"
 	"github.com/egor-zakharov/tiny-url/internal/app/zipper"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os/signal"
@@ -54,10 +56,20 @@ func main() {
 		defer db.Close()
 	}
 
+	var trustedNet *net.IPNet
+
+	if conf.FlagTrustedSubnet != "" {
+		_, trustedNet, err = net.ParseCIDR(conf.FlagTrustedSubnet)
+		if err != nil {
+			log.GetLog().Sugar().Infow("Subnet", "Can not parse", err)
+		}
+	}
+
 	srv := service.NewService(store)
 	zip := zipper.NewZipper()
 	authz := auth.NewAuth()
-	handls := handlers.NewHandlers(srv, conf, log, zip, authz)
+	whiteList := whitelist.NewWhiteList(trustedNet)
+	handls := handlers.NewHandlers(srv, conf, log, zip, authz, whiteList)
 
 	log.GetLog().Sugar().Infow("Log level", "level", conf.FlagLogLevel)
 	log.GetLog().Sugar().Infow("File storage", "file", conf.FlagStoragePath)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"time"
@@ -103,6 +104,21 @@ func (db *dbStorage) GetAll(ctx context.Context, ID string) (map[string]string, 
 		return nil, ErrNotFound
 	}
 	return urls, err
+}
+
+// GetStats - get statistics
+func (db *dbStorage) GetStats(ctx context.Context) (models.Stats, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeOut)
+	defer cancel()
+	row := db.db.QueryRowContext(ctx, "SELECT count(urls), count(distinct(user_id)) from urls")
+	urls := 0
+	users := 0
+	err := row.Scan(&urls, &users)
+	stats := models.Stats{
+		Users: users,
+		Urls:  urls,
+	}
+	return stats, err
 }
 
 func (db *dbStorage) init(ctx context.Context) error {

@@ -30,3 +30,9 @@ type UserURLsResponse struct {
 
 // DeleteBatchRequest -  delete handler request
 type DeleteBatchRequest []string
+
+// StatsResponse - get /api/internal/stats handlers response
+type StatsResponse struct {
+	Urls  int `json:"urls"`
+	Users int `json:"users"`
+}

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"github.com/egor-zakharov/tiny-url/internal/app/models"
 )
 
 //go:generate mockgen -source=contract.go -destination=contract_mock.go -package=storage
@@ -28,4 +29,6 @@ type Storage interface {
 	Backup()
 	// Delete - delete url
 	Delete(shortURLs string, ID string) error
+	// GetStats - get stats urls, users
+	GetStats(ctx context.Context) (models.Stats, error)
 }

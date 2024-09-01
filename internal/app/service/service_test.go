@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/egor-zakharov/tiny-url/internal/app/models"
 	"github.com/egor-zakharov/tiny-url/internal/app/storage"
 	"github.com/golang/mock/gomock"
 	"testing"
@@ -381,6 +382,57 @@ func Test_service_AddBatch(t *testing.T) {
 				return
 			}
 			assert.Equalf(t, tt.want, got, "AddBatch(%v, %v, %v)", tt.args.ctx, tt.args.URLs, tt.args.ID)
+		})
+	}
+}
+
+func Test_service_GetStats(t *testing.T) {
+	ctx := context.Background()
+	testOut := models.Stats{
+		Users: 1,
+		Urls:  1,
+	}
+	type fields struct {
+		storage func(ctrl *gomock.Controller) storage.Storage
+	}
+	type args struct {
+		ctx context.Context
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    models.Stats
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "GetStats success",
+			fields: fields{
+				storage: func(ctrl *gomock.Controller) storage.Storage {
+					mock := storage.NewMockStorage(ctrl)
+					mock.EXPECT().GetStats(ctx).Return(testOut, nil)
+					return mock
+				},
+			},
+			args: args{
+				ctx: ctx,
+			},
+			want:    testOut,
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			s := &service{
+				storage: tt.fields.storage(ctrl),
+			}
+			got, err := s.GetStats(tt.args.ctx)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetStats(%v)", tt.args.ctx)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "GetStats(%v)", tt.args.ctx)
 		})
 	}
 }
